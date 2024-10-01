@@ -48,7 +48,6 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     getUser: (_: any, { id }: { id: string }, { currentUser }: any) => {
-      // Ensure the user is authenticated before fetching a user
       if (!currentUser) {
         throw new Error('Authentication required');
       }
@@ -57,7 +56,6 @@ const resolvers = {
       return users.find((user) => user.id == id);
     },
     getUsers: (_: any, __: any, { currentUser }: any) => {
-      // Ensure the user is authenticated before fetching all users
       if (!currentUser) {
         throw new Error('Authentication required');
       }
@@ -75,11 +73,8 @@ const resolvers = {
         password,
       }: { name: string; email: string; password: string }
     ) => {
-      // Ensure the request is authenticated or skip if your API does not require authentication
-
       try {
         console.log(`Creating user with email: ${email}`);
-        // Use Firebase Admin SDK to create the user in Firebase Authentication
         const newFirebaseUser = await admin.auth().createUser({
           email,
           password,
@@ -140,7 +135,7 @@ async function startServer() {
           }
         }
 
-        return { currentUser }; // Pass the authenticated user to context
+        return { currentUser };
       },
     })
   );

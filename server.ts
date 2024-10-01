@@ -1,19 +1,22 @@
 import express from 'express';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
-import { gql } from 'graphql-tag';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 import admin from 'firebase-admin';
 import * as serviceAccount from './serviceAccount.json';
+import { userTypeDefs } from './graphql/typeDefs/userTypes';
+import { userResolvers } from './graphql/resolvers/userResolvers';
+import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 
-console.log(serviceAccount, 'serviceAccount');
+const typeDefs = mergeTypeDefs([userTypeDefs]);
+const resolvers = mergeResolvers([userResolvers]);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
 
-let users = [
+export let users = [
   {
     id: uuidv4(),
     name: 'John Doe',
@@ -27,80 +30,6 @@ let users = [
     password: 'password',
   },
 ];
-
-const typeDefs = gql`
-  type User {
-    id: ID!
-    name: String!
-    email: String!
-  }
-
-  type Query {
-    getUser(id: ID!): User
-    getUsers: [User!]!
-  }
-
-  type Mutation {
-    createUser(name: String!, email: String!, password: String!): User!
-  }
-`;
-
-const resolvers = {
-  Query: {
-    getUser: (_: any, { id }: { id: string }, { currentUser }: any) => {
-      if (!currentUser) {
-        throw new Error('Authentication required');
-      }
-
-      console.log(`Fetching user with ID: ${id}`);
-      return users.find((user) => user.id == id);
-    },
-    getUsers: (_: any, __: any, { currentUser }: any) => {
-      if (!currentUser) {
-        throw new Error('Authentication required');
-      }
-
-      console.log('Fetching all users');
-      return users;
-    },
-  },
-  Mutation: {
-    createUser: async (
-      _: any,
-      {
-        name,
-        email,
-        password,
-      }: { name: string; email: string; password: string }
-    ) => {
-      try {
-        console.log(`Creating user with email: ${email}`);
-        const newFirebaseUser = await admin.auth().createUser({
-          email,
-          password,
-          displayName: name,
-        });
-
-        console.log('Created Firebase user:', newFirebaseUser.uid);
-
-        const newUser = {
-          id: newFirebaseUser.uid,
-          name: newFirebaseUser.displayName || name,
-          email: newFirebaseUser.email || email,
-          password,
-        };
-
-        // Example: Add the user to an array
-        users.push(newUser);
-
-        return newUser;
-      } catch (error) {
-        console.error('Error creating Firebase user:', error);
-        throw new Error('Failed to create user');
-      }
-    },
-  },
-};
 
 async function startServer() {
   const app = express();

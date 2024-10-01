@@ -4,10 +4,28 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { gql } from 'graphql-tag';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
+import admin from 'firebase-admin';
+import * as serviceAccount from './serviceAccount.json';
+
+console.log(serviceAccount, 'serviceAccount');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+});
 
 let users = [
-  { id: uuidv4(), name: 'John Doe', email: 'john@example.com' },
-  { id: uuidv4(), name: 'Jane Doe', email: 'jane@example.com' },
+  {
+    id: uuidv4(),
+    name: 'John Doe',
+    email: 'john@example.com',
+    password: 'password',
+  },
+  {
+    id: uuidv4(),
+    name: 'Jane Doe',
+    email: 'jane@example.com',
+    password: 'password',
+  },
 ];
 
 const typeDefs = gql`
@@ -23,32 +41,68 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    createUser(name: String!, email: String!): User!
+    createUser(name: String!, email: String!, password: String!): User!
   }
 `;
 
 const resolvers = {
   Query: {
-    getUser: (_: any, { id }: { id: string }) => {
+    getUser: (_: any, { id }: { id: string }, { currentUser }: any) => {
+      // Ensure the user is authenticated before fetching a user
+      if (!currentUser) {
+        throw new Error('Authentication required');
+      }
+
       console.log(`Fetching user with ID: ${id}`);
       return users.find((user) => user.id == id);
     },
-    getUsers: () => {
+    getUsers: (_: any, __: any, { currentUser }: any) => {
+      // Ensure the user is authenticated before fetching all users
+      if (!currentUser) {
+        throw new Error('Authentication required');
+      }
+
       console.log('Fetching all users');
       return users;
     },
   },
   Mutation: {
-    createUser: (_: any, { name, email }: { name: string; email: string }) => {
-      // Run the Firebase logic here (if any)
+    createUser: async (
+      _: any,
+      {
+        name,
+        email,
+        password,
+      }: { name: string; email: string; password: string }
+    ) => {
+      // Ensure the request is authenticated or skip if your API does not require authentication
 
-      const newUser = { id: uuidv4(), name, email };
-      users.push(newUser);
+      try {
+        console.log(`Creating user with email: ${email}`);
+        // Use Firebase Admin SDK to create the user in Firebase Authentication
+        const newFirebaseUser = await admin.auth().createUser({
+          email,
+          password,
+          displayName: name,
+        });
 
-      console.log(`Creating user with name: ${name} and email: ${email}`);
-      console.log(users);
+        console.log('Created Firebase user:', newFirebaseUser.uid);
 
-      return newUser;
+        const newUser = {
+          id: newFirebaseUser.uid,
+          name: newFirebaseUser.displayName || name,
+          email: newFirebaseUser.email || email,
+          password,
+        };
+
+        // Example: Add the user to an array
+        users.push(newUser);
+
+        return newUser;
+      } catch (error) {
+        console.error('Error creating Firebase user:', error);
+        throw new Error('Failed to create user');
+      }
     },
   },
 };
@@ -67,7 +121,29 @@ async function startServer() {
 
   await server.start();
 
-  app.use('/graphql', bodyParser.json(), expressMiddleware(server));
+  app.use(
+    '/graphql',
+    bodyParser.json(),
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.startsWith('Bearer ')
+          ? authHeader.split('Bearer ')[1]
+          : null;
+
+        let currentUser = null;
+        if (token) {
+          try {
+            currentUser = await admin.auth().verifyIdToken(token);
+          } catch (error) {
+            console.error('Error verifying token:', error);
+          }
+        }
+
+        return { currentUser }; // Pass the authenticated user to context
+      },
+    })
+  );
 
   app.listen(4000, () => {
     console.log('Server is running on http://localhost:4000/graphql');

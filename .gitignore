@@ -227,3 +227,5 @@ playwright/.auth
 
 playwright/.auth
 notes.md
+
+serviceAccount.json

@@ -1,5 +1,5 @@
 import express from 'express';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, BaseContext } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,7 +34,7 @@ export let users = [
 async function startServer() {
   const app = express();
 
-  const server = new ApolloServer({
+  const server = new ApolloServer<BaseContext>({
     typeDefs,
     resolvers,
     formatError: (err) => {
@@ -48,7 +48,7 @@ async function startServer() {
   app.use(
     '/graphql',
     bodyParser.json(),
-    expressMiddleware(server, {
+    expressMiddleware<BaseContext>(server, {
       context: async ({ req }) => {
         const authHeader = req.headers.authorization || '';
         const token = authHeader.startsWith('Bearer ')

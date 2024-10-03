@@ -1,5 +1,7 @@
 import { users } from '../../server';
 import admin from 'firebase-admin';
+import { ApolloError, UserInputError } from 'apollo-server-errors';
+import { createUser as createUserInDB } from '../../services/user.service';
 
 export const userResolvers = {
   Query: {
@@ -29,29 +31,50 @@ export const userResolvers = {
         password,
       }: { name: string; email: string; password: string }
     ) => {
+      if (!name || !email || !password) {
+        throw new UserInputError('Invalid input', {
+          code: 'INVALID_INPUT',
+        });
+      }
+
       try {
-        console.log(`Creating user with email: ${email}`);
-        const newFirebaseUser = await admin.auth().createUser({
+        const userRecord = await admin.auth().createUser({
           email,
           password,
           displayName: name,
         });
 
-        console.log('Created Firebase user:', newFirebaseUser.uid);
+        await createUserInDB({
+          id: userRecord.uid,
+          firstName: userRecord.displayName as string,
+          email: userRecord.email || '',
+        });
 
-        const newUser = {
-          id: newFirebaseUser.uid,
-          name: newFirebaseUser.displayName || name,
-          email: newFirebaseUser.email || email,
-          password,
+        return {
+          id: userRecord.uid,
+          name: userRecord.displayName,
+          email: userRecord.email,
         };
-
-        users.push(newUser);
-
-        return newUser;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating Firebase user:', error);
-        throw new Error('Failed to create user');
+
+        if (error.code === 'auth/email-already-exists') {
+          throw new UserInputError(
+            'The email address is already in use by another account.',
+            {
+              code: error.code,
+              details: error.message,
+            }
+          );
+        }
+
+        throw new ApolloError(
+          'Failed to create user',
+          'INTERNAL_SERVER_ERROR',
+          {
+            details: error.message,
+          }
+        );
       }
     },
   },

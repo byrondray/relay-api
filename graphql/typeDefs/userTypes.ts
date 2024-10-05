@@ -7,12 +7,20 @@ export const userTypeDefs = gql`
     email: String!
   }
 
+  type AuthPayload {
+    id: ID!
+    name: String!
+    email: String!
+    sessionId: String!
+  }
+
   type Query {
     getUser(id: ID!): User
     getUsers: [User!]!
   }
 
   type Mutation {
-    createUser(name: String!, email: String!, password: String!): User!
+    createUser(name: String!, email: String!, firebaseId: String!): AuthPayload!
+    login(email: String!, firebaseId: String!): AuthPayload!
   }
 `;

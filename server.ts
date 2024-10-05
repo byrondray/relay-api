@@ -1,5 +1,6 @@
 import express from 'express';
 import { ApolloServer, BaseContext } from '@apollo/server';
+import { Request, Response } from 'express';
 import { expressMiddleware } from '@apollo/server/express4';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,6 +9,7 @@ import * as serviceAccount from './serviceAccount.json';
 import { userTypeDefs } from './graphql/typeDefs/userTypes';
 import { userResolvers } from './graphql/resolvers/userResolvers';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
+import session, { Session } from 'express-session';
 
 const typeDefs = mergeTypeDefs([userTypeDefs]);
 const resolvers = mergeResolvers([userResolvers]);
@@ -34,7 +36,26 @@ export let users = [
 async function startServer() {
   const app = express();
 
-  const server = new ApolloServer<BaseContext>({
+  app.use(
+    session({
+      secret: 'fullstack-bcit-secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24,
+      },
+    })
+  );
+
+  interface MyContext extends BaseContext {
+    req: Request;
+    res: Response;
+    currentUser: admin.auth.DecodedIdToken | null;
+    sessionData: Session;
+  }
+
+  const server = new ApolloServer<MyContext>({
     typeDefs,
     resolvers,
     formatError: (err) => {
@@ -44,27 +65,33 @@ async function startServer() {
   });
 
   await server.start();
-
   app.use(
     '/graphql',
     bodyParser.json(),
-    expressMiddleware<BaseContext>(server, {
-      context: async ({ req }) => {
+    expressMiddleware<MyContext>(server, {
+      context: async ({ req, res }) => {
         const authHeader = req.headers.authorization || '';
         const token = authHeader.startsWith('Bearer ')
           ? authHeader.split('Bearer ')[1]
           : null;
 
+        console.log('Received Token:', token);
+
         let currentUser = null;
         if (token) {
           try {
             currentUser = await admin.auth().verifyIdToken(token);
+            console.log('Decoded Token:', currentUser);
           } catch (error) {
-            console.error('Error verifying token:', error);
+            console.error('Error verifying token:', (error as Error).message);
           }
+        } else {
+          console.log('No valid token found');
         }
 
-        return { currentUser };
+        const sessionData = req.session;
+
+        return { req, res, currentUser, sessionData };
       },
     })
   );

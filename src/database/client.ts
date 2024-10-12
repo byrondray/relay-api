@@ -5,6 +5,9 @@ import { Logger } from 'drizzle-orm';
 const isDev = process.env.IS_DEV;
 const logging = process.env.dbLogging;
 
+console.log('DB_URL:', process.env.DB_URL);
+console.log('AUTH_TOKEN:', process.env.AUTH_TOKEN);
+
 const url = isDev ? process.env.LOCAL_DB_URL : process.env.DB_URL;
 
 console.log('url', url);

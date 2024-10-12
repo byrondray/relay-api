@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "bun run server.ts",
+    "start": "bun run src/server.ts",
+    "dev": "bun run src/server.ts --watch src/",
     "test": "echo \"Error: no test specified\" && exit 1",
     "push": "bunx drizzle-kit push"
   },
@@ -13,20 +14,23 @@
   "dependencies": {
     "@apollo/server": "^4.11.0",
     "@graphql-tools/merge": "^9.0.7",
+    "@graphql-tools/schema": "^10.0.6",
     "@libsql/client": "^0.14.0",
     "apollo-server-errors": "^3.3.1",
     "drizzle-orm": "^0.33.0",
-    "express": "^4.21.0",
+    "express": "^4.21.1",
     "express-session": "^1.18.0",
     "firebase-admin": "^12.6.0",
     "graphql": "^16.9.0",
+    "graphql-subscriptions": "^2.0.0",
     "graphql-tag": "^2.12.6",
+    "graphql-ws": "^5.16.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.24.2",
     "@types/express": "^5.0.0",
     "@types/express-session": "^1.18.0",
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.24.2"
   }
 }

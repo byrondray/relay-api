@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   lastName: text('last_name'),
   email: text('email').notNull(),
   createdAt: text('created_at').default(sql`(current_timestamp)`),
+  expoPushToken: text('expo_push_token'),
 });
 
 export type User = typeof users.$inferSelect;

@@ -20,7 +20,17 @@ export const userTypeDefs = gql`
   }
 
   type Mutation {
-    createUser(name: String!, email: String!, firebaseId: String!): AuthPayload!
-    login(email: String!, firebaseId: String!): AuthPayload!
+    createUser(
+      name: String!
+      email: String!
+      firebaseId: String!
+      expoPushToken: String!
+    ): AuthPayload!
+
+    login(
+      email: String!
+      firebaseId: String!
+      expoPushToken: String!
+    ): AuthPayload!
   }
 `;

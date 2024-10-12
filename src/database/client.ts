@@ -6,6 +6,8 @@ const isDev = process.env.IS_DEV;
 const logging = process.env.dbLogging;
 
 const url = isDev ? process.env.LOCAL_DB_URL : process.env.DB_URL;
+
+console.log('url', url);
 if (!url) throw new Error('Missing db url env variable');
 
 const authToken = process.env.AUTH_TOKEN;

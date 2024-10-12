@@ -3,7 +3,7 @@ import { config } from './src/database/client';
 
 export default {
   dialect: 'sqlite',
-  schema: './database/schema/*',
+  schema: './src/database/schema/*',
   out: './drizzle',
   driver: 'turso',
   dbCredentials: config,

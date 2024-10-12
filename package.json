@@ -14,9 +14,6 @@
     "@apollo/server": "^4.11.0",
     "@graphql-tools/merge": "^9.0.7",
     "@libsql/client": "^0.14.0",
-    "@types/express": "^5.0.0",
-    "@types/express-session": "^1.18.0",
-    "@types/uuid": "^10.0.0",
     "apollo-server-errors": "^3.3.1",
     "drizzle-orm": "^0.33.0",
     "express": "^4.21.0",
@@ -27,6 +24,9 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.24.2"
+    "drizzle-kit": "^0.24.2",
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.0",
+    "@types/uuid": "^10.0.0"
   }
 }

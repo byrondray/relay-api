@@ -91,8 +91,8 @@ export const userResolvers = {
     ) => {
       try {
         let userRecord = await findUserByEmail(email);
-
-        if (!userRecord) {
+        console.log(userRecord, 'userRecord');
+        if (userRecord.length === 0) {
           userRecord = await createUserInDB({
             id: firebaseId,
             firstName: email.split('@')[0],

@@ -16,27 +16,43 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import http from 'http';
+import dotenv from 'dotenv';
 
+dotenv.config();
+
+// Merged GraphQL TypeDefs and Resolvers
 const typeDefs = mergeTypeDefs([userTypeDefs, messageTypeDefs]);
 const resolvers: IResolvers = mergeResolvers([userResolvers, messageResolvers]);
 
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
 
 async function startServer() {
   const app = express();
-
   const httpServer = http.createServer(app);
 
+  // Create WebSocket server for GraphQL subscriptions
   const wsServer = new WebSocketServer({
     server: httpServer,
-    path: '/graphql',
+    path: '/subscriptions',
   });
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
 
-  const serverCleanup = useServer({ schema }, wsServer);
+  const serverCleanup = useServer(
+    {
+      schema,
+      onConnect: () => {
+        console.log('Client connected to WebSocket');
+      },
+      onDisconnect: () => {
+        console.log('Client disconnected from WebSocket');
+      },
+    },
+    wsServer
+  );
 
   app.use(
     session({
@@ -69,6 +85,7 @@ async function startServer() {
         async serverWillStart() {
           return {
             async drainServer() {
+              console.log('Draining HTTP server...');
               await serverCleanup.dispose();
             },
           };

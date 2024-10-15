@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { findUserById } from '../../services/user.service';
 import fetch from 'node-fetch';
 import { PubSub } from 'graphql-subscriptions';
+import { Message } from 'graphql-ws';
 
 const pubsub = new PubSub();
 
@@ -102,9 +103,10 @@ export const messageResolvers = {
       }: { senderId: string; recipientId: string; text: string },
       { currentUser }: any
     ) => {
-      if (!currentUser) {
-        throw new AuthenticationError('Authentication required');
-      }
+      console.log('createMessage called');
+      // if (!currentUser) {
+      //   throw new AuthenticationError('Authentication required');
+      // }
 
       if (!senderId || !recipientId || !text) {
         throw new UserInputError(
@@ -116,9 +118,13 @@ export const messageResolvers = {
         const newMessage = { senderId, recipientId, text, id: uuidv4() };
         const [createdMessage] = await createMessage(newMessage);
 
-        pubsub.publish('MESSAGE_SENT', {
+        console.log('Message created:', createdMessage);
+
+        pubsub.publish(`MESSAGE_SENT_${recipientId}`, {
           messageSent: createdMessage,
         });
+
+        console.log('Published message to recipient:', recipientId);
 
         const recipient = await findUserById(recipientId);
         if (recipient.length > 0 && recipient[0].expoPushToken) {
@@ -135,7 +141,6 @@ export const messageResolvers = {
         throw new ApolloError('Failed to create message.');
       }
     },
-
     testNotification: async (
       _: any,
       {
@@ -162,6 +167,7 @@ export const messageResolvers = {
           'Sending test notification via Expo to:',
           user.expoPushToken
         );
+
         await sendPushNotification(
           user.expoPushToken,
           messageText,
@@ -181,8 +187,20 @@ export const messageResolvers = {
 
   Subscription: {
     messageSent: {
-      subscribe: (_: any, { recipientId }: { recipientId: string }) =>
-        pubsub.asyncIterator(`MESSAGE_SENT_${recipientId}`),
+      subscribe: async (_: any, { recipientId }: { recipientId: string }) => {
+        const asyncIterator = pubsub.asyncIterator(
+          `MESSAGE_SENT_${recipientId}`
+        );
+
+        return asyncIterator;
+      },
+      resolve: (payload: { messageSent: Message }) => {
+        if (!payload.messageSent) {
+          throw new Error('No message was sent.');
+        }
+
+        return payload.messageSent;
+      },
     },
   },
 };

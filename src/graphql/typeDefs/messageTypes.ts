@@ -42,7 +42,6 @@ export const messageTypeDefs = gql`
     message: String!
   }
 
-  # Subscription type for listening to new messages
   type Subscription {
     messageSent(recipientId: String!): Message!
   }

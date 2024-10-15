@@ -157,7 +157,6 @@ export const userResolvers = {
           console.log('Successfully added user to DB:', firebaseId);
         } else {
           console.log('User already exists in DB:', userRecord[0].id);
-
           await updateExpoPushToken(userRecord[0].id, expoPushToken);
         }
 

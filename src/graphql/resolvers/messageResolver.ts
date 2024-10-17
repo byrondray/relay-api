@@ -82,7 +82,14 @@ export const messageResolvers = {
 
       try {
         const messages = await getPrivateMessageConvo(senderId, recipientId);
-        return messages;
+
+        const sortedMessages = messages.sort(
+          (a, b) =>
+            new Date(a.createdAt ?? '').getTime() -
+            new Date(b.createdAt ?? '').getTime()
+        );
+
+        return sortedMessages;
       } catch (error) {
         console.error(
           `Error fetching conversation between ${senderId} and ${recipientId}:`,
@@ -103,10 +110,9 @@ export const messageResolvers = {
       }: { senderId: string; recipientId: string; text: string },
       { currentUser }: any
     ) => {
-      console.log('createMessage called');
-      // if (!currentUser) {
-      //   throw new AuthenticationError('Authentication required');
-      // }
+      if (!currentUser) {
+        throw new AuthenticationError('Authentication required');
+      }
 
       if (!senderId || !recipientId || !text) {
         throw new UserInputError(

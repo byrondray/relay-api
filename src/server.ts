@@ -1,30 +1,29 @@
-import express from 'express';
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
-import bodyParser from 'body-parser';
-import admin from 'firebase-admin';
-import * as serviceAccount from '../serviceAccount.json';
-import { userTypeDefs } from './graphql/typeDefs/userTypes';
-import { userResolvers } from './graphql/resolvers/userResolvers';
-import { messageTypeDefs } from './graphql/typeDefs/messageTypes';
-import { messageResolvers } from './graphql/resolvers/messageResolver';
-import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
-import { IResolvers } from '@graphql-tools/utils';
-import session from 'express-session';
-import { WebSocketServer } from 'ws';
-import { useServer } from 'graphql-ws/lib/use/ws';
-import { makeExecutableSchema } from '@graphql-tools/schema';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import http from 'http';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import bodyParser from "body-parser";
+import admin from "firebase-admin";
+import * as serviceAccount from "../serviceAccount.json";
+import { userTypeDefs } from "./graphql/typeDefs/userTypes";
+import { userResolvers } from "./graphql/resolvers/userResolvers";
+import { messageTypeDefs } from "./graphql/typeDefs/messageTypes";
+import { messageResolvers } from "./graphql/resolvers/messageResolver";
+import { mergeTypeDefs, mergeResolvers } from "@graphql-tools/merge";
+import { IResolvers } from "@graphql-tools/utils";
+import session from "express-session";
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/lib/use/ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import http from "http";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-// Merged GraphQL TypeDefs and Resolvers
 const typeDefs = mergeTypeDefs([userTypeDefs, messageTypeDefs]);
 const resolvers: IResolvers = mergeResolvers([userResolvers, messageResolvers]);
 
-// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
@@ -33,10 +32,17 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Create WebSocket server for GraphQL subscriptions
+  // Set up CORS middleware
+  app.use(
+    cors({
+      origin: process.env.ALLOWED_ORIGINS?.split(",") || "*", // Adjust origins as necessary
+      credentials: true, // Allow cookies to be sent with requests if needed
+    })
+  );
+
   const wsServer = new WebSocketServer({
     server: httpServer,
-    path: '/subscriptions',
+    path: "/subscriptions",
   });
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -45,10 +51,10 @@ async function startServer() {
     {
       schema,
       onConnect: () => {
-        console.log('Client connected to WebSocket');
+        console.log("Client connected to WebSocket");
       },
       onDisconnect: () => {
-        console.log('Client disconnected from WebSocket');
+        console.log("Client disconnected from WebSocket");
       },
     },
     wsServer
@@ -56,11 +62,11 @@ async function startServer() {
 
   app.use(
     session({
-      secret: 'fullstack-bcit-secret',
+      secret: "fullstack-bcit-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === "production",
         maxAge: 1000 * 60 * 60 * 24,
       },
     })
@@ -85,7 +91,7 @@ async function startServer() {
         async serverWillStart() {
           return {
             async drainServer() {
-              console.log('Draining HTTP server...');
+              console.log("Draining HTTP server...");
               await serverCleanup.dispose();
             },
           };
@@ -97,13 +103,13 @@ async function startServer() {
   await server.start();
 
   app.use(
-    '/graphql',
+    "/graphql",
     bodyParser.json(),
     expressMiddleware(server, {
       context: async ({ req, res }): Promise<MyContext> => {
-        const authHeader = req.headers.authorization || '';
-        const token = authHeader.startsWith('Bearer ')
-          ? authHeader.split('Bearer ')[1]
+        const authHeader = req.headers.authorization || "";
+        const token = authHeader.startsWith("Bearer ")
+          ? authHeader.split("Bearer ")[1]
           : null;
 
         let currentUser = null;
@@ -111,7 +117,7 @@ async function startServer() {
           try {
             currentUser = await admin.auth().verifyIdToken(token);
           } catch (error) {
-            console.error('Error verifying token:', error);
+            console.error("Error verifying token:", error);
           }
         }
 
@@ -126,7 +132,7 @@ async function startServer() {
   );
 
   httpServer.listen(4000, () => {
-    console.log('Server is running on http://localhost:4000/graphql');
+    console.log("Server is running on http://localhost:4000/graphql");
   });
 }
 

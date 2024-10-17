@@ -32,11 +32,10 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Set up CORS middleware
   app.use(
     cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(",") || "*", // Adjust origins as necessary
-      credentials: true, // Allow cookies to be sent with requests if needed
+      origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
+      credentials: true,
     })
   );
 

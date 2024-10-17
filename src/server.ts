@@ -32,12 +32,7 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  app.use(
-    cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
-      credentials: true,
-    })
-  );
+  app.use(cors({ origin: "*" }));
 
   const wsServer = new WebSocketServer({
     server: httpServer,

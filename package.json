@@ -8,9 +8,12 @@
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "npm install && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "push": "bunx drizzle-kit push"
+    "push": "bunx drizzle-kit push",
+    "generate": "bunx drizzle-kit generate",
+    "seed": "bun run src/database/seed.ts",
+    "studio": "bunx drizzle-kit studio"
   },
-  "author": "",
+  "author": "Relay Rideshare",
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^4.11.0",

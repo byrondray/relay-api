@@ -30,18 +30,6 @@ export const messageTypeDefs = gql`
     ): Message!
   }
 
-  type Mutation {
-    testNotification(
-      recipientId: String!
-      messageText: String!
-    ): TestNotificationResponse
-  }
-
-  type TestNotificationResponse {
-    success: Boolean!
-    message: String!
-  }
-
   type Subscription {
     messageSent(recipientId: String!): Message!
   }

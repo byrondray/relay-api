@@ -9,6 +9,8 @@ import { userTypeDefs } from "./graphql/typeDefs/userTypes";
 import { userResolvers } from "./graphql/resolvers/userResolvers";
 import { messageTypeDefs } from "./graphql/typeDefs/messageTypes";
 import { messageResolvers } from "./graphql/resolvers/messageResolver";
+import { mapDataResolver } from "./graphql/resolvers/mapDataResolver";
+import { mapDataTypeDefs } from "./graphql/typeDefs/mapDataTypes";
 import { mergeTypeDefs, mergeResolvers } from "@graphql-tools/merge";
 import { IResolvers } from "@graphql-tools/utils";
 import session from "express-session";
@@ -21,8 +23,16 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const typeDefs = mergeTypeDefs([userTypeDefs, messageTypeDefs]);
-const resolvers: IResolvers = mergeResolvers([userResolvers, messageResolvers]);
+const typeDefs = mergeTypeDefs([
+  userTypeDefs,
+  messageTypeDefs,
+  mapDataTypeDefs,
+]);
+const resolvers: IResolvers = mergeResolvers([
+  userResolvers,
+  messageResolvers,
+  mapDataResolver,
+]);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),

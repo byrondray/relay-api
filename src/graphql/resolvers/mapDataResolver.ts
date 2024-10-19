@@ -17,7 +17,7 @@ export const mapDataResolver = {
 
       const result = await getCommunityCenters(lat, lon);
       console.log("result", result);
-      return result.reverse().slice(0, 5);
+      return result.slice(0, 5);
     },
 
     filterSchoolsByName: async (

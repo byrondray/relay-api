@@ -32,6 +32,10 @@ export const userResolvers = {
 
         const name = `${user.firstName} ${user.lastName || ""}`.trim();
 
+        if (!user) {
+          return;
+        }
+
         return {
           id: user.id,
           name,

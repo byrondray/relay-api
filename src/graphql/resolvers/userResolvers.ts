@@ -25,7 +25,6 @@ export const userResolvers = {
         throw new AuthenticationError("Authentication required");
       }
 
-      console.log(`Fetching user with ID: ${id}`);
       try {
         const userArray = await findUserById(id);
         const user = userArray[0];
@@ -51,7 +50,6 @@ export const userResolvers = {
         throw new AuthenticationError("Authentication required");
       }
 
-      console.log("Fetching all users");
       const users = await getUsers();
 
       return users.map((user: any) => ({
@@ -98,11 +96,7 @@ export const userResolvers = {
             createdAt: new Date().toISOString(),
             expoPushToken,
           });
-
-          console.log("Successfully added user to DB:", firebaseId);
         } else {
-          console.log("User already exists in DB:", userRecord[0].id);
-
           await updateExpoPushToken(userRecord[0].id, expoPushToken);
         }
 
@@ -154,9 +148,7 @@ export const userResolvers = {
             email,
             expoPushToken,
           });
-          console.log("Successfully added user to DB:", firebaseId);
         } else {
-          console.log("User already exists in DB:", userRecord[0].id);
           await updateExpoPushToken(userRecord[0].id, expoPushToken);
         }
 
@@ -175,6 +167,41 @@ export const userResolvers = {
         throw new ApolloError("Failed to log in", "INTERNAL_SERVER_ERROR", {
           details: error.message,
         });
+      }
+    },
+    updateExpoPushToken: async (
+      _: any,
+      { userId, expoPushToken }: { userId: string; expoPushToken: string },
+      { currentUser }: any
+    ) => {
+      if (!currentUser) {
+        throw new AuthenticationError("Authentication required");
+      }
+
+      try {
+        const updatedUser = await updateExpoPushToken(userId, expoPushToken);
+
+        if (!updatedUser || updatedUser.length === 0) {
+          throw new ApolloError("Failed to update Expo Push Token");
+        }
+
+        return {
+          id: updatedUser[0].id,
+          name: `${updatedUser[0].firstName} ${
+            updatedUser[0].lastName || ""
+          }`.trim(),
+          email: updatedUser[0].email,
+          expoPushToken: updatedUser[0].expoPushToken,
+        };
+      } catch (error) {
+        console.error("Error updating Expo Push Token:", error);
+        throw new ApolloError(
+          "Failed to update Expo Push Token",
+          "INTERNAL_SERVER_ERROR",
+          {
+            details: (error as Error).message,
+          }
+        );
       }
     },
   },

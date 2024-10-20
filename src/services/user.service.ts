@@ -36,7 +36,6 @@ export const updateExpoPushToken = async (
       .where(eq(users.id, userId))
       .returning();
 
-    console.log(result, 'result');
     return result;
   } catch (error) {
     console.error(`Error finding user with ID ${userId}:`, error);

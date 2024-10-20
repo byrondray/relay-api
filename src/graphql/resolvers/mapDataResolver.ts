@@ -16,7 +16,6 @@ export const mapDataResolver = {
       }
 
       const result = await getCommunityCenters(lat, lon);
-      console.log("result", result);
       return result.slice(0, 5);
     },
 

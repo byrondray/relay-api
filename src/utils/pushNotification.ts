@@ -5,8 +5,6 @@ export const sendPushNotification = async (
   messageText: string,
   senderId: string
 ) => {
-  console.log("Sending push notification via Expo to:", expoPushToken);
-
   const message = {
     to: expoPushToken,
     sound: "default",

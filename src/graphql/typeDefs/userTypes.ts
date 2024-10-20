@@ -1,10 +1,11 @@
-import { gql } from 'graphql-tag';
+import { gql } from "graphql-tag";
 
 export const userTypeDefs = gql`
   type User {
     id: ID!
     name: String!
     email: String!
+    expoPushToken: String!
   }
 
   type AuthPayload {
@@ -32,5 +33,7 @@ export const userTypeDefs = gql`
       firebaseId: String!
       expoPushToken: String!
     ): AuthPayload!
+
+    updateExpoPushToken(userId: String!, expoPushToken: String!): User!
   }
 `;

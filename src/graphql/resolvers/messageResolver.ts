@@ -92,18 +92,13 @@ export const messageResolvers = {
         const newMessage = { senderId, recipientId, text, id: uuidv4() };
         const [createdMessage] = await createMessage(newMessage);
 
-        console.log("Message created:", createdMessage);
-
         pubsub.publish(`MESSAGE_SENT_${recipientId}`, {
           messageSent: createdMessage,
         });
 
-        console.log("Published message to recipient:", recipientId);
-
         const recipient = await findUserById(recipientId);
         if (recipient.length > 0 && recipient[0].expoPushToken) {
           const expoPushToken = recipient[0].expoPushToken;
-          console.log("Sending push notification to recipient:", recipientId);
           await sendPushNotification(expoPushToken, text, senderId);
         } else {
           console.log("No Expo Push Token found for recipient:", recipientId);

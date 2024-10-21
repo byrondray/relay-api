@@ -1,4 +1,4 @@
-import { gql } from 'graphql-tag';
+import { gql } from "graphql-tag";
 
 export const messageTypeDefs = gql`
   type Message {
@@ -11,7 +11,7 @@ export const messageTypeDefs = gql`
 
   type Conversation {
     recipientName: String!
-    messages: String!
+    messages: [Message!]!
   }
 
   type Query {

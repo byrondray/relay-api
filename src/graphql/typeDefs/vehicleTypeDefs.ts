@@ -1,0 +1,28 @@
+import { gql } from "graphql-tag";
+
+export const vehicleTypeDefs = gql`
+  type Vehicle {
+    id: ID!
+    userId: String!
+    make: String!
+    model: String!
+    year: String!
+    licensePlate: String!
+    color: String!
+  }
+
+  type Query {
+    getVehicle(id: ID!): Vehicle
+    getVehicleForUser(userId: String!): [Vehicle!]!
+  }
+
+  type Mutation {
+    createVehicle(
+      make: String!
+      model: String!
+      year: String!
+      licensePlate: String!
+      color: String!
+    ): Vehicle!
+  }
+`;

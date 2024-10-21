@@ -11,6 +11,14 @@ import { messageTypeDefs } from "./graphql/typeDefs/messageTypes";
 import { messageResolvers } from "./graphql/resolvers/messageResolver";
 import { mapDataResolver } from "./graphql/resolvers/mapDataResolver";
 import { mapDataTypeDefs } from "./graphql/typeDefs/mapDataTypes";
+import { groupMessageResolvers } from "./graphql/resolvers/groupMessagesResolvers";
+import { groupMessageTypeDefs } from "./graphql/typeDefs/groupMessagesTypeDefs";
+import { groupResolvers } from "./graphql/resolvers/groupsResolvers";
+import { groupTypeDefs } from "./graphql/typeDefs/groupsTypeDef";
+import { vehicleResolvers } from "./graphql/resolvers/vehicleResolvers";
+import { vehicleTypeDefs } from "./graphql/typeDefs/vehicleTypeDefs";
+import { childResolvers } from "./graphql/resolvers/childrenResolvers";
+import { childTypeDefs } from "./graphql/typeDefs/childrenTypeDefs";
 import { mergeTypeDefs, mergeResolvers } from "@graphql-tools/merge";
 import { IResolvers } from "@graphql-tools/utils";
 import session from "express-session";
@@ -27,11 +35,19 @@ const typeDefs = mergeTypeDefs([
   userTypeDefs,
   messageTypeDefs,
   mapDataTypeDefs,
+  groupMessageTypeDefs,
+  groupTypeDefs,
+  vehicleTypeDefs,
+  childTypeDefs,
 ]);
 const resolvers: IResolvers = mergeResolvers([
   userResolvers,
   messageResolvers,
   mapDataResolver,
+  groupMessageResolvers,
+  groupResolvers,
+  vehicleResolvers,
+  childResolvers,
 ]);
 
 admin.initializeApp({

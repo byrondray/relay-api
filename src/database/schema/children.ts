@@ -1,13 +1,18 @@
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { users } from "./users";
+import { schools } from "./schools";
 
 export const children = sqliteTable("children", {
   id: text("id").primaryKey(),
-  userId: text("user_id").references(() => users.id).notNull(),
+  userId: text("user_id")
+    .references(() => users.id)
+    .notNull(),
   firstName: text("first_name").notNull(),
-  lastName: text("last_name"),
-  birthdate: text("birthdate"),
+  schoolId: text("school_id")
+    .references(() => schools.id)
+    .notNull(),
+  schoolEmailAddress: text("school_email_address"),
   createdAt: text("created_at").default(sql`(current_timestamp)`),
 });
 

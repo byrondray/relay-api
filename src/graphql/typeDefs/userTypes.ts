@@ -3,14 +3,19 @@ import { gql } from "graphql-tag";
 export const userTypeDefs = gql`
   type User {
     id: ID!
-    name: String!
+    firstName: String!
+    lastName: String
     email: String!
-    expoPushToken: String!
+    phoneNumber: String
+    city: String
+    createdAt: String
+    expoPushToken: String
   }
 
   type AuthPayload {
     id: ID!
-    name: String!
+    firstName: String!
+    lastName: String
     email: String!
     sessionId: String!
   }
@@ -22,16 +27,17 @@ export const userTypeDefs = gql`
 
   type Mutation {
     createUser(
-      name: String!
+      firstName: String!
+      lastName: String
       email: String!
       firebaseId: String!
-      expoPushToken: String!
+      expoPushToken: String
     ): AuthPayload!
 
     login(
       email: String!
       firebaseId: String!
-      expoPushToken: String!
+      expoPushToken: String
     ): AuthPayload!
 
     updateExpoPushToken(userId: String!, expoPushToken: String!): User!

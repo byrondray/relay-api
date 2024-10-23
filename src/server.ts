@@ -40,6 +40,7 @@ const typeDefs = mergeTypeDefs([
   vehicleTypeDefs,
   childTypeDefs,
 ]);
+
 const resolvers: IResolvers = mergeResolvers([
   userResolvers,
   messageResolvers,

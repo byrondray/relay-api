@@ -82,7 +82,7 @@ export const userResolvers = {
       }
 
       try {
-        let userRecord = await findUserByEmail(email);
+        let userRecord = await findUserByEmail(email.toLowerCase());
 
         if (userRecord.length === 0) {
           const [firstName, ...lastNameParts] = name.split(" ");
@@ -131,8 +131,6 @@ export const userResolvers = {
       try {
         let userRecord = await findUserByEmail(email.toLowerCase());
 
-        console.log("User record:", userRecord);
-
         if (userRecord.length === 0 || !userRecord[0].id) {
           const userById = await findUserById(firebaseId);
           if (userById.length > 0) {
@@ -142,6 +140,7 @@ export const userResolvers = {
           }
 
           const firstName = email.split("@")[0];
+
           userRecord = await createUserInDB({
             id: firebaseId,
             firstName,
@@ -156,9 +155,7 @@ export const userResolvers = {
 
         return {
           id: userRecord[0].id,
-          name: `${userRecord[0].firstName} ${
-            userRecord[0].lastName || ""
-          }`.trim(),
+          name: userRecord[0].firstName ?? "",
           email: userRecord[0].email,
           sessionId: req.session.userId,
         };

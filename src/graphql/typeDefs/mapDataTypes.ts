@@ -18,10 +18,24 @@ const mapDataTypeDefs = gql`
     city: String!
   }
 
+  type LocationData {
+    lat: Float!
+    lon: Float!
+    senderId: String!
+    timestamp: String!
+  }
+
   type Query {
     getCommunityCenters(lat: Float!, lon: Float!): [CommunityCenter!]!
-
     filterSchoolsByName(name: String!): [School!]!
+  }
+
+  type Mutation {
+    sendLocation(carpoolId: String!, lat: Float!, lon: Float!): LocationData
+  }
+
+  type Subscription {
+    locationReceived(recipientId: String!): LocationData
   }
 `;
 

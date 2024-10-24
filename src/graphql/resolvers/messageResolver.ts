@@ -13,6 +13,7 @@ import { findUserById } from "../../services/user.service";
 import { PubSub } from "graphql-subscriptions";
 import { Message } from "graphql-ws";
 import { sendPushNotification } from "../../utils/pushNotification";
+import { FirebaseUser } from "./userResolvers";
 
 const pubsub = new PubSub();
 
@@ -21,7 +22,7 @@ export const messageResolvers = {
     getConversationsForUser: async (
       _: any,
       { userId }: { userId: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");
@@ -42,7 +43,7 @@ export const messageResolvers = {
     getPrivateMessageConversation: async (
       _: any,
       { senderId, recipientId }: { senderId: string; recipientId: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");
@@ -76,7 +77,7 @@ export const messageResolvers = {
         recipientId,
         text,
       }: { senderId: string; recipientId: string; text: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");

@@ -4,6 +4,7 @@ import { groups } from "../../database/schema/groups";
 import { usersToGroups } from "../../database/schema/usersToGroups";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { FirebaseUser } from "./userResolvers";
 
 const db = getDB();
 
@@ -12,7 +13,7 @@ export const groupResolvers = {
     getGroupWithUsers: async (
       _: any,
       { id }: { id: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
@@ -38,7 +39,11 @@ export const groupResolvers = {
       };
     },
 
-    getGroup: async (_: any, { id }: { id: string }, { currentUser }: any) => {
+    getGroup: async (
+      _: any,
+      { id }: { id: string },
+      { currentUser }: FirebaseUser
+    ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
@@ -52,12 +57,16 @@ export const groupResolvers = {
       return null;
     },
 
-    getGroups: async (_: any, __: any, { currentUser }: any) => {
+    getGroups: async (_: any, __: any, { currentUser }: FirebaseUser) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
-      const result = await db.select().from(groups);
+      const result = await db
+        .select()
+        .from(groups)
+        .innerJoin(usersToGroups, eq(groups.id, usersToGroups.groupId))
+        .where(eq(usersToGroups.userId, currentUser.uid));
       return result;
     },
   },
@@ -65,10 +74,8 @@ export const groupResolvers = {
   Mutation: {
     createGroup: async (
       _: any,
-      {
-        name,
-      }: { name: string; color: string; temporary: string },
-      { currentUser }: any
+      { name }: { name: string; color: string; temporary: string },
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
@@ -84,7 +91,7 @@ export const groupResolvers = {
       if (groupResult) {
         const userToGroupData = {
           id: uuid(),
-          userId: currentUser.id,
+          userId: currentUser.uid,
           groupId: groupData.id,
         };
 
@@ -97,7 +104,7 @@ export const groupResolvers = {
     addMemberToGroup: async (
       _: any,
       { groupId, userId }: { groupId: string; userId: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
@@ -135,13 +142,12 @@ export const groupResolvers = {
     deleteMemberFromGroup: async (
       _: any,
       { groupId, userId }: { groupId: string; userId: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
-      // Check if the user is a member of the group
       const existingMember = await db
         .select()
         .from(usersToGroups)
@@ -156,7 +162,6 @@ export const groupResolvers = {
         throw new ApolloError("User is not a member of this group");
       }
 
-      // Delete the user from the group
       const result = await db
         .delete(usersToGroups)
         .where(

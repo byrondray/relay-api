@@ -3,6 +3,7 @@ import { getDB } from "../../database/client";
 import { groupMessages } from "../../database/schema/groupMessages";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { FirebaseUser } from "./userResolvers";
 
 const db = getDB();
 
@@ -11,7 +12,7 @@ export const groupMessageResolvers = {
     getGroupMessages: async (
       _: any,
       { groupId }: { groupId: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
@@ -30,16 +31,16 @@ export const groupMessageResolvers = {
     createGroupMessage: async (
       _: any,
       { groupId, message }: { groupId: string; message: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
       const groupMessageData = {
-        id: uuid(), 
+        id: uuid(),
         groupId,
-        userId: currentUser.id, 
+        userId: currentUser.uid,
         message,
         createdAt: new Date().toISOString(),
       };

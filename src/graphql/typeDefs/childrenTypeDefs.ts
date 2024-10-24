@@ -19,7 +19,7 @@ export const childTypeDefs = gql`
   type Mutation {
     createChild(
       firstName: String!
-      schoolId: String!
+      schoolName: String!
       schoolEmailAddress: String
     ): Child!
   }

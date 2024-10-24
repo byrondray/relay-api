@@ -8,6 +8,7 @@ export const vehicleTypeDefs = gql`
     model: String!
     year: String!
     licensePlate: String!
+    seats: Int!
     color: String!
   }
 
@@ -22,6 +23,7 @@ export const vehicleTypeDefs = gql`
       model: String!
       year: String!
       licensePlate: String!
+      seats: Int!
       color: String!
     ): Vehicle!
   }

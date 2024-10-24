@@ -23,6 +23,7 @@ export const userTypeDefs = gql`
   type Query {
     getUser(id: ID!): User
     getUsers: [User!]!
+    hasUserOnBoarded: Boolean!
   }
 
   type Mutation {
@@ -41,5 +42,14 @@ export const userTypeDefs = gql`
     ): AuthPayload!
 
     updateExpoPushToken(userId: String!, expoPushToken: String!): User!
+
+    updateUserInfo(
+      id: String!
+      firstName: String
+      lastName: String
+      email: String
+      phoneNumber: String
+      city: String
+    ): User!
   }
 `;

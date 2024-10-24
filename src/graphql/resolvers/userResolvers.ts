@@ -11,6 +11,13 @@ import {
   updateExpoPushToken,
 } from "../../services/user.service";
 import { Request } from "express";
+import { getDB } from "../../database/client";
+import { users } from "../../database/schema/users";
+import { and, eq, notLike } from "drizzle-orm";
+import { vehicle } from "../../database/schema/vehicle";
+import { children } from "../../database/schema/children";
+
+const db = getDB();
 
 declare module "express-session" {
   interface Session {
@@ -18,9 +25,34 @@ declare module "express-session" {
   }
 }
 
+export type FirebaseUser = {
+  currentUser: {
+    iss: string;
+    aud: string;
+    auth_time: number;
+    user_id: string;
+    sub: string;
+    iat: number;
+    exp: number;
+    email: string;
+    email_verified: boolean;
+    firebase: {
+      identities: {
+        email: string[];
+      };
+      sign_in_provider: string;
+    };
+    uid: string;
+  };
+};
+
 export const userResolvers = {
   Query: {
-    getUser: async (_: any, { id }: { id: string }, { currentUser }: any) => {
+    getUser: async (
+      _: any,
+      { id }: { id: string },
+      { currentUser }: FirebaseUser
+    ) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");
       }
@@ -29,15 +61,16 @@ export const userResolvers = {
         const userArray = await findUserById(id);
         const user = userArray[0];
 
-        const name = `${user.firstName} ${user.lastName || ""}`.trim();
-
         if (!user) {
           return;
         }
 
         return {
           id: user.id,
-          name,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phoneNumber: user.phoneNumber,
+          city: user.city,
           email: user.email,
         };
       } catch (error) {
@@ -45,7 +78,7 @@ export const userResolvers = {
         throw new ApolloError("Internal server error");
       }
     },
-    getUsers: async (_: any, __: any, { currentUser }: any) => {
+    getUsers: async (_: any, __: any, { currentUser }: FirebaseUser) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");
       }
@@ -57,6 +90,43 @@ export const userResolvers = {
         name: `${user.firstName} ${user.lastName || ""}`.trim(),
         email: user.email,
       }));
+    },
+    hasUserOnBoarded: async (
+      _: any,
+      __: any,
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new AuthenticationError("Authentication required");
+      }
+      try {
+        const result = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, currentUser.uid))
+          .innerJoin(vehicle, eq(users.id, vehicle.userId))
+          .innerJoin(children, eq(users.id, children.userId));
+
+        const user = await db
+          .select()
+          .from(users)
+          .where(
+            and(
+              eq(users.id, currentUser.uid),
+              notLike(users.city, ""),
+              notLike(users.lastName, "")
+            )
+          );
+
+        if (user.length === 0) {
+          return false;
+        }
+
+        return result.length > 0;
+      } catch (error) {
+        console.error(`Error fetching user: ${error}`);
+        throw new ApolloError("Internal server error");
+      }
     },
   },
   Mutation: {
@@ -153,9 +223,11 @@ export const userResolvers = {
 
         req.session.userId = userRecord[0].id;
 
+        console.log("firstName", userRecord[0].firstName);
+
         return {
           id: userRecord[0].id,
-          name: userRecord[0].firstName ?? "",
+          firstName: userRecord[0].firstName ?? "",
           email: userRecord[0].email,
           sessionId: req.session.userId,
         };
@@ -169,7 +241,7 @@ export const userResolvers = {
     updateExpoPushToken: async (
       _: any,
       { userId, expoPushToken }: { userId: string; expoPushToken: string },
-      { currentUser }: any
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new AuthenticationError("Authentication required");
@@ -194,6 +266,87 @@ export const userResolvers = {
         console.error("Error updating Expo Push Token:", error);
         throw new ApolloError(
           "Failed to update Expo Push Token",
+          "INTERNAL_SERVER_ERROR",
+          {
+            details: (error as Error).message,
+          }
+        );
+      }
+    },
+    updateUserInfo: async (
+      _: any,
+      { id, firstName, lastName, email, phoneNumber, city }: any,
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new AuthenticationError("Authentication required");
+      }
+
+      const updates: Partial<Record<string, any>> = {};
+
+      console.log(
+        "userId",
+        id,
+        "firstName",
+        firstName,
+        "lastName",
+        lastName,
+        "email",
+        email,
+        "phone_number",
+        phoneNumber,
+        "city",
+        city
+      );
+
+      if (!phoneNumber) {
+        throw new UserInputError("Phone number must be provided");
+      }
+
+      if (!city) {
+        throw new UserInputError("City must be provided");
+      }
+
+      if (!lastName) {
+        throw new UserInputError("Last name must be provided");
+      }
+
+      if (typeof firstName === "string" && firstName.trim())
+        updates.firstName = firstName;
+      if (typeof lastName === "string" && lastName.trim())
+        updates.lastName = lastName;
+      if (typeof email === "string" && email.trim()) updates.email = email;
+      if (typeof phoneNumber === "string" && phoneNumber.trim())
+        updates.phoneNumber = phoneNumber;
+      if (typeof city === "string" && city.trim()) updates.city = city;
+
+      if (Object.keys(updates).length === 0) {
+        throw new ApolloError("No valid fields provided for update");
+      }
+
+      try {
+        const updatedUser = await db
+          .update(users)
+          .set(updates)
+          .where(eq(users.id, id))
+          .returning();
+
+        if (!updatedUser || updatedUser.length === 0) {
+          throw new ApolloError("Failed to update user info");
+        }
+
+        return {
+          id: updatedUser[0].id,
+          firstName: updatedUser[0].firstName,
+          lastName: updatedUser[0].lastName,
+          email: updatedUser[0].email,
+          phone_number: updatedUser[0].phoneNumber,
+          city: updatedUser[0].city,
+        };
+      } catch (error) {
+        console.error("Error updating user info:", error);
+        throw new ApolloError(
+          "Failed to update user info",
           "INTERNAL_SERVER_ERROR",
           {
             details: (error as Error).message,

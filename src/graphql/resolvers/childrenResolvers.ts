@@ -3,12 +3,18 @@ import { getDB } from "../../database/client";
 import { children } from "../../database/schema/children";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { schools } from "../../database/schema/schools";
+import { type FirebaseUser } from "./userResolvers";
 
 const db = getDB();
 
 export const childResolvers = {
   Query: {
-    getChild: async (_: any, { id }: { id: string }, { currentUser }: any) => {
+    getChild: async (
+      _: any,
+      { id }: { id: string },
+      { currentUser }: FirebaseUser
+    ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
@@ -25,7 +31,7 @@ export const childResolvers = {
       return null;
     },
 
-    getChildren: async (_: any, __: any, { currentUser }: any) => {
+    getChildren: async (_: any, __: any, { currentUser }: FirebaseUser) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
@@ -34,7 +40,11 @@ export const childResolvers = {
       return result;
     },
 
-    getChildrenForUser: async (_: any, __: any, { currentUser }: any) => {
+    getChildrenForUser: async (
+      _: any,
+      __: any,
+      { currentUser }: FirebaseUser
+    ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
@@ -42,7 +52,7 @@ export const childResolvers = {
       const result = await db
         .select()
         .from(children)
-        .where(eq(children.userId, currentUser.id));
+        .where(eq(children.userId, currentUser.uid));
 
       return result;
     },
@@ -51,21 +61,34 @@ export const childResolvers = {
   Mutation: {
     createChild: async (
       _: any,
-      { firstName, schoolId, schoolEmailAddress }: any,
-      { currentUser }: any
+      { firstName, schoolName, schoolEmailAddress }: any,
+      { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
+      console.log();
+
+      const school = await db
+        .select()
+        .from(schools)
+        .where(eq(schools.name, schoolName));
+
+      if (school.length === 0) {
+        throw new ApolloError("School not found");
+      }
+
       const childData = {
         id: uuid(),
-        userId: currentUser.id,
+        userId: currentUser.uid,
         firstName,
-        schoolId,
+        schoolId: school[0].id,
         schoolEmailAddress,
         createdAt: new Date().toISOString(),
       };
+
+      console.log("childData", childData);
 
       const result = await db.insert(children).values(childData);
 

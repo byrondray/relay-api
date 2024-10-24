@@ -1,4 +1,4 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { users } from "../schema/users";
 
 export const vehicle = sqliteTable("vehicle", {
@@ -10,6 +10,7 @@ export const vehicle = sqliteTable("vehicle", {
   model: text("model").notNull(),
   year: text("year").notNull(),
   licensePlate: text("license_plate").notNull(),
+  numberOfSeats: integer("number_of_seats").notNull(),
   color: text("color").notNull(),
 });
 

@@ -126,6 +126,69 @@ export const carpoolResolvers = {
         ),
       }));
     },
+    getCarpoolersByGroupWithoutApprovedRequests: async (
+      _: any,
+      {
+        groupId,
+        date,
+        time,
+        endingAddress,
+      }: { groupId: string; date: string; time: string; endingAddress: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const carpoolsInGroup = await db
+        .select()
+        .from(carpools)
+        .where(
+          and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
+        );
+
+      if (carpoolsInGroup.length === 0) {
+        return [];
+      }
+
+      const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
+
+      
+
+      const notApprovedRequests = await db
+        .select({
+          id: requests.id, 
+          carpoolId: requests.carpoolId,
+          parentId: requests.parentId,
+          childId: requests.childId,
+          groupId: carpools.groupId, 
+          isApproved: requests.isApproved,
+          startAddress: requests.startingAddress,
+          endAddress: carpools.endAddress, 
+          startingLat: requests.startingLatitude,
+          startingLon: requests.startingLongitude, 
+          endingLat: carpools.endLat, 
+          endingLon: carpools.endLon,
+          pickupTime: requests.pickupTime, 
+          createdAt: requests.createdAt, 
+        })
+        .from(requests)
+        .innerJoin(carpools, eq(requests.carpoolId, carpools.id)) 
+        .where(
+          and(
+            eq(requests.isApproved, 0),
+            gte(carpools.departureDate, today),
+            eq(carpools.groupId, groupId),
+            eq(carpools.endAddress, endingAddress),
+            eq(carpools.departureDate, date),
+            eq(carpools.departureTime, time)
+          )
+        );
+
+      return notApprovedRequests;
+    },
   },
 
   Mutation: {
@@ -191,7 +254,27 @@ export const carpoolResolvers = {
         parentId,
         childId,
         carpoolId,
-      }: { parentId: string; childId: string; carpoolId?: string },
+        groupId,
+        startingAddress,
+        endingAddress,
+        startingLat,
+        startingLon,
+        endingLat,
+        endingLon,
+        pickupTime,
+      }: {
+        parentId: string;
+        childId: string;
+        groupId: string;
+        startingAddress: string;
+        endingAddress: string;
+        startingLat: number;
+        startingLon: number;
+        endingLat: number;
+        endingLon: number;
+        pickupTime: string;
+        carpoolId?: string;
+      },
       { currentUser }: FirebaseUser
     ) => {
       if (!currentUser || currentUser.uid !== parentId) {
@@ -207,6 +290,14 @@ export const carpoolResolvers = {
         parentId,
         childId,
         carpoolId: carpoolId || "",
+        groupId,
+        startingAddress,
+        endingAddress,
+        startingLatitude: startingLat.toString(),
+        startingLongitude: startingLon.toString(),
+        endingLatitude: endingLat.toString(),
+        endingLongitude: endingLon.toString(),
+        pickupTime,
         isApproved: 0,
         createdAt: new Date().toISOString(),
       };

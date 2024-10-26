@@ -24,6 +24,8 @@ export const vehicleResolvers = {
         return result[0];
       }
 
+      console.log(result, "result");
+
       return null;
     },
     getVehicleForUser: async (
@@ -36,11 +38,24 @@ export const vehicleResolvers = {
       }
 
       const result = await db
-        .select()
+        .select({
+          id: vehicle.id,
+          userId: vehicle.userId,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          licensePlate: vehicle.licensePlate,
+          seats: vehicle.numberOfSeats,
+          color: vehicle.color,
+          vehicleImageUrl: vehicle.vehicleImageUrl,
+        })
         .from(vehicle)
         .where(eq(vehicle.userId, userId));
 
-      return result;
+      return result.map((v) => ({
+        ...v,
+        seats: v.seats,
+      }));
     },
   },
 

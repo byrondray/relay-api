@@ -3,19 +3,28 @@ import { carpools } from "./carpool";
 import { users } from "./users";
 import { children } from "./children";
 import { sql } from "drizzle-orm";
+import { groups } from "./groups";
 
 export const requests = sqliteTable("requests", {
-  id: text("id").primaryKey(),
-  carpoolId: text("carpool_id")
-    .references(() => carpools.id)
-    .notNull(),
+  id: text("id").primaryKey().notNull(),
+  carpoolId: text("carpool_id").references(() => carpools.id),
   parentId: text("parent_id")
     .references(() => users.id)
     .notNull(),
   childId: text("child_id")
     .references(() => children.id)
     .notNull(),
+  groupId: text("group_id")
+    .references(() => groups.id)
+    .notNull(),
   isApproved: integer("is_approved").default(0),
+  startingAddress: text("starting_address").notNull(),
+  endingAddress: text("ending_address").notNull(),
+  startingLatitude: text("starting_latitude").notNull(),
+  startingLongitude: text("starting_longitude").notNull(),
+  endingLatitude: text("ending_latitude").notNull(),
+  endingLongitude: text("ending_longitude").notNull(),
+  pickupTime: text("pickup_time").notNull(),
   createdAt: text("created_at").default(sql`(current_timestamp)`),
 });
 

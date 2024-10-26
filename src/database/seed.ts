@@ -162,13 +162,23 @@ const seedDatabase = async () => {
   }
 
   for (let i = 0; i < 10; i++) {
+    const { lat: startLat, lon: startLon } = getRandomVancouverLatLon();
+    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
     await db.insert(requests).values({
       id: uuid(),
       carpoolId: faker.helpers.arrayElement(carpoolIds),
+      groupId: faker.helpers.arrayElement(groupIds),
       parentId: faker.helpers.arrayElement(userIds),
       childId: faker.helpers.arrayElement(childIds),
       isApproved: faker.datatype.boolean() ? 1 : 0,
       createdAt: new Date().toISOString(),
+      startingAddress: faker.location.streetAddress(),
+      endingAddress: faker.location.streetAddress(),
+      startingLatitude: startLat.toString(),
+      startingLongitude: startLon.toString(),
+      endingLatitude: endLat.toString(),
+      endingLongitude: endLon.toString(),
+      pickupTime: faker.date.future().toISOString(),
     });
   }
 

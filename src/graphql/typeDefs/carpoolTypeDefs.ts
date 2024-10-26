@@ -26,7 +26,15 @@ export const carpoolTypeDefs = gql`
     carpoolId: String
     parentId: String!
     childId: String!
+    groupId: String!
     isApproved: Boolean!
+    startAddress: String!
+    endAddress: String!
+    startingLat: Float!
+    startingLon: Float!
+    endingLat: Float!
+    endingLon: Float!
+    pickupTime: String!
     createdAt: String!
   }
 
@@ -56,6 +64,14 @@ export const carpoolTypeDefs = gql`
     carpoolId: String
     parentId: String!
     childId: String!
+    groupId: String!
+    startingAddress: String!
+    endingAddress: String!
+    startingLat: Float!
+    startingLon: Float!
+    endingLat: Float!
+    endingLon: Float!
+    pickupTime: String!
   }
 
   type Query {
@@ -65,6 +81,12 @@ export const carpoolTypeDefs = gql`
     getCarpoolsByGroupsWithApprovedCarpoolers(
       groupId: String!
     ): [CarpoolWithCarpoolers!]
+    getCarpoolersByGroupWithoutApprovedRequests(
+      groupId: String!
+      date: String!
+      time: String!
+      endingAddress: String!
+    ): [Request!]
   }
 
   type CarpoolWithCarpoolers {

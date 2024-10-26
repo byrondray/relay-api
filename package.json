@@ -11,6 +11,7 @@
     "push": "bunx drizzle-kit push",
     "generate": "bunx drizzle-kit generate",
     "seed": "bun run src/database/seed.ts",
+    "seed-user": "bun run src/database/seedForUser.ts",
     "studio": "bunx drizzle-kit studio"
   },
   "author": "Relay Rideshare",

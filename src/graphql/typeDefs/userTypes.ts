@@ -7,6 +7,8 @@ export const userTypeDefs = gql`
     lastName: String
     email: String!
     phoneNumber: String
+    licenseImageUrl: String
+    insuranceImageUrl: String
     city: String
     createdAt: String
     expoPushToken: String
@@ -49,6 +51,8 @@ export const userTypeDefs = gql`
       lastName: String
       email: String
       phoneNumber: String
+      licenseImageUrl: String
+      insuranceImageUrl: String
       city: String
     ): User!
   }

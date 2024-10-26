@@ -2,8 +2,8 @@ import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
 import { carpools } from "../../database/schema/carpool";
 import { requests } from "../../database/schema/carpoolRequests";
-import { users } from "../../database/schema/users"; // Assuming users table exists
-import { children } from "../../database/schema/children"; // Assuming children table exists
+import { users } from "../../database/schema/users";
+import { children } from "../../database/schema/children";
 import { eq, and, gte, lt } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";

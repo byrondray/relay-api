@@ -1,6 +1,6 @@
 import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
-import { children } from "../../database/schema/children";
+import { ChildInsert, children } from "../../database/schema/children";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { schools } from "../../database/schema/schools";
@@ -61,7 +61,17 @@ export const childResolvers = {
   Mutation: {
     createChild: async (
       _: any,
-      { firstName, schoolName, schoolEmailAddress }: any,
+      {
+        firstName,
+        schoolName,
+        schoolEmailAddress,
+        imageUrl,
+      }: {
+        firstName: string;
+        schoolName: string;
+        schoolEmailAddress: string;
+        imageUrl: string;
+      },
       { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
@@ -79,12 +89,13 @@ export const childResolvers = {
         throw new ApolloError("School not found");
       }
 
-      const childData = {
+      const childData: ChildInsert = {
         id: uuid(),
         userId: currentUser.uid,
         firstName,
         schoolId: school[0].id,
         schoolEmailAddress,
+        imageUrl,
         createdAt: new Date().toISOString(),
       };
 

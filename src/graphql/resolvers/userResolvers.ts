@@ -12,7 +12,7 @@ import {
 } from "../../services/user.service";
 import { Request } from "express";
 import { getDB } from "../../database/client";
-import { users } from "../../database/schema/users";
+import { UserInsert, users } from "../../database/schema/users";
 import { and, eq, notLike } from "drizzle-orm";
 import { vehicle } from "../../database/schema/vehicle";
 import { children } from "../../database/schema/children";
@@ -104,7 +104,6 @@ export const userResolvers = {
           .select()
           .from(users)
           .where(eq(users.id, currentUser.uid))
-          .innerJoin(vehicle, eq(users.id, vehicle.userId))
           .innerJoin(children, eq(users.id, children.userId));
 
         const user = await db
@@ -250,7 +249,7 @@ export const userResolvers = {
       try {
         const updatedUser = await updateExpoPushToken(userId, expoPushToken);
 
-        if (!updatedUser || updatedUser.length === 0) {
+        if (!updatedUser) {
           throw new ApolloError("Failed to update Expo Push Token");
         }
 
@@ -275,7 +274,25 @@ export const userResolvers = {
     },
     updateUserInfo: async (
       _: any,
-      { id, firstName, lastName, email, phoneNumber, city }: any,
+      {
+        id,
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        city,
+        insuranceImageUrl,
+        licenseImageUrl,
+      }: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+        city: string;
+        insuranceImageUrl?: string;
+        licenseImageUrl?: string;
+      },
       { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
@@ -283,21 +300,6 @@ export const userResolvers = {
       }
 
       const updates: Partial<Record<string, any>> = {};
-
-      console.log(
-        "userId",
-        id,
-        "firstName",
-        firstName,
-        "lastName",
-        lastName,
-        "email",
-        email,
-        "phone_number",
-        phoneNumber,
-        "city",
-        city
-      );
 
       if (!phoneNumber) {
         throw new UserInputError("Phone number must be provided");
@@ -319,29 +321,37 @@ export const userResolvers = {
       if (typeof phoneNumber === "string" && phoneNumber.trim())
         updates.phoneNumber = phoneNumber;
       if (typeof city === "string" && city.trim()) updates.city = city;
+      if (typeof licenseImageUrl === "string" && licenseImageUrl.trim())
+        updates.insurancelicenseImageUrl = licenseImageUrl;
+      if (typeof insuranceImageUrl === "string" && insuranceImageUrl.trim())
+        updates.insuranceImageUrl = insuranceImageUrl;
 
       if (Object.keys(updates).length === 0) {
         throw new ApolloError("No valid fields provided for update");
       }
 
       try {
-        const updatedUser = await db
+        const updatedUsers: UserInsert[] = await db
           .update(users)
           .set(updates)
           .where(eq(users.id, id))
           .returning();
 
-        if (!updatedUser || updatedUser.length === 0) {
+        const updatedUser = updatedUsers[0];
+
+        if (!updatedUser) {
           throw new ApolloError("Failed to update user info");
         }
 
         return {
-          id: updatedUser[0].id,
-          firstName: updatedUser[0].firstName,
-          lastName: updatedUser[0].lastName,
-          email: updatedUser[0].email,
-          phone_number: updatedUser[0].phoneNumber,
-          city: updatedUser[0].city,
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          phone_number: updatedUser.phoneNumber,
+          licenseImageUrl: updatedUser.licenseImageUrl,
+          insuranceImageUrl: updatedUser.insuranceImageUrl,
+          city: updatedUser.city,
         };
       } catch (error) {
         console.error("Error updating user info:", error);

@@ -11,6 +11,7 @@ export const vehicle = sqliteTable("vehicle", {
   year: text("year").notNull(),
   licensePlate: text("license_plate").notNull(),
   numberOfSeats: integer("number_of_seats").notNull(),
+  vehicleImageUrl: text("vehicle_image_url"),
   color: text("color").notNull(),
 });
 

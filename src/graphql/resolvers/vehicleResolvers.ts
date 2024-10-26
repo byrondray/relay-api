@@ -55,6 +55,7 @@ export const vehicleResolvers = {
         licensePlate,
         color,
         seats,
+        imageUrl,
       }: {
         userId: string;
         make: string;
@@ -63,6 +64,7 @@ export const vehicleResolvers = {
         licensePlate: string;
         color: string;
         seats: number;
+        imageUrl?: string;
       },
       { currentUser }: FirebaseUser
     ) => {
@@ -79,6 +81,7 @@ export const vehicleResolvers = {
         licensePlate,
         color,
         numberOfSeats: seats,
+        vehicleImageUrl: imageUrl,
       };
 
       const result = await db.insert(vehicle).values(vehicleData);

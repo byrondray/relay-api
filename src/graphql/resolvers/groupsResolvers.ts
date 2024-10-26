@@ -1,10 +1,12 @@
 import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
-import { groups } from "../../database/schema/groups";
+import { GroupInsert, groups } from "../../database/schema/groups";
 import { usersToGroups } from "../../database/schema/usersToGroups";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { FirebaseUser } from "./userResolvers";
+import { schools } from "../../database/schema/schools";
+import { communityCenters } from "../../database/schema/communityCenters";
 
 const db = getDB();
 
@@ -74,30 +76,58 @@ export const groupResolvers = {
   Mutation: {
     createGroup: async (
       _: any,
-      { name }: { name: string; color: string; temporary: string },
+      {
+        name,
+        schoolName,
+        communityCenterName,
+      }: { name: string; schoolName?: string; communityCenterName?: string },
       { currentUser }: FirebaseUser
     ) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
-      const groupData = {
-        id: uuid(),
-        name,
-      };
+      let schoolData = null;
+      if (schoolName) {
+        const schoolResult = await db
+          .select()
+          .from(schools)
+          .where(eq(schools.name, schoolName));
+        if (schoolResult.length > 0) {
+          schoolData = schoolResult[0];
+        }
+      }
 
-      const groupResult = await db.insert(groups).values(groupData);
+      let communityCenterData = null;
+      if (communityCenterName) {
+        const communityCenterResult = await db
+          .select()
+          .from(communityCenters)
+          .where(eq(communityCenters.name, communityCenterName));
+        if (communityCenterResult.length > 0) {
+          communityCenterData = communityCenterResult[0];
+        }
 
-      if (groupResult) {
-        const userToGroupData = {
+        const groupData: GroupInsert = {
           id: uuid(),
-          userId: currentUser.uid,
-          groupId: groupData.id,
+          name,
+          schoolId: schoolData?.id || null,
+          communityCenterId: communityCenterData?.id || null,
         };
 
-        await db.insert(usersToGroups).values(userToGroupData);
+        const groupResult = await db.insert(groups).values(groupData);
 
-        return groupData;
+        if (groupResult) {
+          const userToGroupData = {
+            id: uuid(),
+            userId: currentUser.uid,
+            groupId: groupData.id,
+          };
+
+          await db.insert(usersToGroups).values(userToGroupData);
+
+          return groupData;
+        }
       }
     },
 
@@ -133,10 +163,10 @@ export const groupResolvers = {
       const result = await db.insert(usersToGroups).values(userToGroupData);
 
       if (result) {
-        return {
-          message: "User added to group successfully",
-        };
+        return { message: "User added to group successfully" };
       }
+
+      throw new ApolloError("Failed to add user to group");
     },
 
     deleteMemberFromGroup: async (
@@ -172,10 +202,10 @@ export const groupResolvers = {
         );
 
       if (result) {
-        return {
-          message: "User removed from group successfully",
-        };
+        return { message: "User removed from group successfully" };
       }
+
+      throw new ApolloError("Failed to remove user from group");
     },
   },
 };

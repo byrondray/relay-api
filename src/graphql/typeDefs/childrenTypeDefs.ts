@@ -7,6 +7,7 @@ export const childTypeDefs = gql`
     firstName: String!
     schoolId: String!
     schoolEmailAddress: String
+    imageUrl: String
     createdAt: String!
   }
 
@@ -21,6 +22,7 @@ export const childTypeDefs = gql`
       firstName: String!
       schoolName: String!
       schoolEmailAddress: String
+      imageUrl: String
     ): Child!
   }
 `;

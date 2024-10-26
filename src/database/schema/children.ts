@@ -12,6 +12,7 @@ export const children = sqliteTable("children", {
   schoolId: text("school_id")
     .references(() => schools.id)
     .notNull(),
+  imageUrl: text("image_url"),
   schoolEmailAddress: text("school_email_address"),
   createdAt: text("created_at").default(sql`(current_timestamp)`),
 });

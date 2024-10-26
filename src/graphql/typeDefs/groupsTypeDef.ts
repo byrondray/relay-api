@@ -4,7 +4,17 @@ export const groupTypeDefs = gql`
   type Group {
     id: ID!
     name: String!
+    schoolId: String
+    communityCenterId: String
     members: [User!]!
+  }
+
+  type AddMemberToGroupResponse {
+    message: String!
+  }
+
+  type DeleteMemberFromGroupResponse {
+    message: String!
   }
 
   type Query {
@@ -14,8 +24,20 @@ export const groupTypeDefs = gql`
   }
 
   type Mutation {
-    createGroup(name: String!): Group!
-    addMemberToGroup(groupId: String!, userId: String!): String!
-    deleteMemberFromGroup(groupId: String!, userId: String!): String!
+    createGroup(
+      name: String!
+      schoolId: String
+      communityCenterId: String
+    ): Group!
+
+    addMemberToGroup(
+      groupId: String!
+      userId: String!
+    ): AddMemberToGroupResponse!
+
+    deleteMemberFromGroup(
+      groupId: String!
+      userId: String!
+    ): DeleteMemberFromGroupResponse!
   }
 `;

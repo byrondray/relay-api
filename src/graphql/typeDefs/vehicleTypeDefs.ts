@@ -10,6 +10,7 @@ export const vehicleTypeDefs = gql`
     licensePlate: String!
     seats: Int!
     color: String!
+    vehicleImageUrl: String
   }
 
   type Query {
@@ -25,6 +26,7 @@ export const vehicleTypeDefs = gql`
       licensePlate: String!
       seats: Int!
       color: String!
+      imageUrl: String
     ): Vehicle!
   }
 `;

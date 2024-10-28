@@ -52,6 +52,8 @@ export const vehicleResolvers = {
         .from(vehicle)
         .where(eq(vehicle.userId, userId));
 
+      console.log(result, "result");
+
       return result.map((v) => ({
         ...v,
         seats: v.seats,

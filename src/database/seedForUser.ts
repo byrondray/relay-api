@@ -10,14 +10,42 @@ import { vehicle } from "./schema/vehicle";
 import { schools } from "./schema/schools";
 
 const getRandomVancouverLatLon = () => {
-  const lat = faker.number.float({ min: 49.0, max: 49.4 });
-  const lon = faker.number.float({ min: -123.3, max: -123.0 });
+  const lat = faker.number.float({ min: 49.2, max: 49.3 });
+  const lon = faker.number.float({ min: -123.23, max: -123.0 });
   return { lat, lon };
 };
 
 const childImageUrls = [
   "https://media.istockphoto.com/id/1387226163/photo/portrait-of-a-little-boy-with-a-plaster-on-his-arm-after-an-injection.jpg?s=612x612&w=0&k=20&c=3dlo_ztuREvJWLNbdqlgGcztceBgk5qDdU7ulYaErkk=",
   "https://img.freepik.com/free-photo/smiley-little-girl-red-dress_23-2148984788.jpg",
+];
+
+const addressesInVancouver = [
+  {
+    address: "3445 Ontario Street, Vancouver, BC, Canada",
+    lat: 49.2543168,
+    lon: -123.1048422,
+  },
+  {
+    address: "1289 West 27th Avenue, Vancouver, BC, Canada",
+    lat: 49.247513,
+    lon: -123.1339775,
+  },
+  {
+    address: "3199 West 5th Avenue, Burnaby, BC, Canada",
+    lat: 49.26761639999999,
+    lon: -123.1758181,
+  },
+  {
+    address: "4136 Webber Avenue, Vancouver, BC, Canada",
+    lat: 49.24828230000001,
+    lon: -123.0987814,
+  },
+  {
+    address: "2116 West Avenue, Vancouver, BC, Canada",
+    lat: 49.2289974,
+    lon: -123.156436,
+  },
 ];
 
 const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
@@ -46,20 +74,23 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   );
 
   for (let i = 0; i < childImageUrls.length; i++) {
-    const childId = uuid();
-    await db.insert(children).values({
-      id: childId,
-      userId: currentUserId,
-      firstName: faker.person.firstName(),
-      schoolId: Array.from(schoolsArr)[i].id,
-      schoolEmailAddress: faker.internet.email(),
-      createdAt: new Date().toISOString(),
-      imageUrl: childImageUrls[i],
-    });
+    const imageUrl = childImageUrls[i];
+    if (imageUrl) {
+      const childId = uuid();
+      await db.insert(children).values({
+        id: childId,
+        userId: currentUserId,
+        firstName: faker.person.firstName(),
+        schoolId: Array.from(schoolsArr)[i].id,
+        schoolEmailAddress: faker.internet.email(),
+        createdAt: new Date().toISOString(),
+        imageUrl,
+      });
 
-    console.log(
-      `Created child with ID: ${childId} for user: ${currentUserId} with image: ${childImageUrls[i]}`
-    );
+      console.log(
+        `Created child with ID: ${childId} for user: ${currentUserId} with image: ${imageUrl}`
+      );
+    }
   }
 
   for (let i = 0; i < 2; i++) {
@@ -69,10 +100,10 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       userId: currentUserId,
       make: faker.vehicle.manufacturer(),
       model: faker.vehicle.model(),
-      year: faker.vehicle.vin(),
+      year: faker.date.past().getFullYear().toString(),
       licensePlate: faker.vehicle.vrm(),
       color: faker.color.human(),
-      numberOfSeats: faker.number.int({ min: 2, max: 7 }),
+      numberOfSeats: faker.number.int({ min: 3, max: 7 }),
     });
 
     console.log(
@@ -80,6 +111,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     );
   }
 
+  // Seed other users and their children
   for (let i = 0; i < 4; i++) {
     const userId = uuid();
     await db.insert(users).values({
@@ -105,49 +137,55 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   const childIds: string[] = [];
   for (const userId of userIds) {
     for (let i = 0; i < 2; i++) {
-      const childId = uuid();
-      await db.insert(children).values({
-        id: childId,
-        userId: userId,
-        firstName: faker.person.firstName(),
-        schoolId: Array.from(schoolsArr)[i].id,
-        schoolEmailAddress: faker.internet.email(),
-        createdAt: new Date().toISOString(),
-      });
-      childIds.push(childId);
+      const imageUrl = faker.helpers.arrayElement(childImageUrls);
 
-      console.log(`Created child with ID: ${childId} for user: ${userId}`);
+      if (imageUrl) {
+        const childId = uuid();
+        await db.insert(children).values({
+          id: childId,
+          userId: userId,
+          firstName: faker.person.firstName(),
+          schoolId: Array.from(schoolsArr)[i].id,
+          schoolEmailAddress: faker.internet.email(),
+          createdAt: new Date().toISOString(),
+          imageUrl,
+        });
+        childIds.push(childId);
+
+        console.log(`Created child with ID: ${childId} for user: ${userId}`);
+      }
     }
   }
 
-  for (const userId of userIds) {
-    const userChildIds = childIds.filter(
-      (childId, index) => Math.floor(index / 2) === userIds.indexOf(userId)
-    );
+  let addressIndex = 0;
 
-    for (const childId of userChildIds) {
-      const { lat: startLat, lon: startLon } = getRandomVancouverLatLon();
-      const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
-      const pickupTime = faker.date.future().toISOString();
+  for (let i = 0; i < 5; i++) {
+    const userId = userIds[i % userIds.length];
+    const childId = childIds[i % childIds.length];
+    const { address, lat, lon } = addressesInVancouver[addressIndex];
 
-      await db.insert(requests).values({
-        id: uuid(),
-        groupId: groupId,
-        parentId: userId,
-        childId: childId,
-        isApproved: faker.datatype.boolean() ? 1 : 0,
-        startingAddress: faker.location.streetAddress(),
-        endingAddress: faker.location.streetAddress(),
-        startingLatitude: startLat.toString(),
-        startingLongitude: startLon.toString(),
-        endingLatitude: endLat.toString(),
-        endingLongitude: endLon.toString(),
-        pickupTime: pickupTime,
-        createdAt: new Date().toISOString(),
-      });
+    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
+    const pickupTime = faker.date.future().toISOString();
 
-      console.log(`Created request for user: ${userId} and child: ${childId}`);
-    }
+    await db.insert(requests).values({
+      id: uuid(),
+      groupId: groupId,
+      parentId: userId,
+      childId: childId,
+      isApproved: 0,
+      startingAddress: address,
+      endingAddress: "BCIT Willingdon Avenue, Burnaby, BC, Canada",
+      startingLatitude: lat.toString(),
+      startingLongitude: lon.toString(),
+      endingLatitude: endLat.toString(),
+      endingLongitude: endLon.toString(),
+      pickupTime: pickupTime,
+      createdAt: new Date().toISOString(),
+    });
+
+    console.log(`Created request for user: ${userId} and child: ${childId}`);
+
+    addressIndex = (addressIndex + 1) % addressesInVancouver.length;
   }
 
   console.log(`Seeding complete for group: ${groupId}`);

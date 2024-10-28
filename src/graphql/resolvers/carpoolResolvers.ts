@@ -142,50 +142,46 @@ export const carpoolResolvers = {
 
       const today = new Date().toISOString().split("T")[0];
 
-      const carpoolsInGroup = await db
-        .select()
-        .from(carpools)
-        .where(
-          and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
-        );
+      // const carpoolsInGroup = await db
+      //   .select()
+      //   .from(carpools)
+      //   .where(
+      //     and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
+      //   );
 
-      if (carpoolsInGroup.length === 0) {
-        return [];
-      }
+      // if (carpoolsInGroup.length === 0) {
+      //   return [];
+      // }
 
-      const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
-
-      
+      // const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
 
       const notApprovedRequests = await db
         .select({
-          id: requests.id, 
+          id: requests.id,
           carpoolId: requests.carpoolId,
           parentId: requests.parentId,
           childId: requests.childId,
-          groupId: carpools.groupId, 
+          groupId: requests.groupId,
           isApproved: requests.isApproved,
           startAddress: requests.startingAddress,
-          endAddress: carpools.endAddress, 
+          endAddress: requests.endingAddress,
           startingLat: requests.startingLatitude,
-          startingLon: requests.startingLongitude, 
-          endingLat: carpools.endLat, 
-          endingLon: carpools.endLon,
-          pickupTime: requests.pickupTime, 
-          createdAt: requests.createdAt, 
+          startingLon: requests.startingLongitude,
+          endingLat: requests.endingLatitude,
+          endingLon: requests.endingLongitude,
+          pickupTime: requests.pickupTime,
+          createdAt: requests.createdAt,
         })
         .from(requests)
-        .innerJoin(carpools, eq(requests.carpoolId, carpools.id)) 
         .where(
           and(
             eq(requests.isApproved, 0),
-            gte(carpools.departureDate, today),
-            eq(carpools.groupId, groupId),
-            eq(carpools.endAddress, endingAddress),
-            eq(carpools.departureDate, date),
-            eq(carpools.departureTime, time)
+            eq(requests.groupId, groupId),
+            // gte(carpools.departureDate, today),
           )
         );
+
+      console.log("notApprovedRequests", notApprovedRequests);
 
       return notApprovedRequests;
     },

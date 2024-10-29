@@ -22,29 +22,54 @@ const childImageUrls = [
 
 const addressesInVancouver = [
   {
-    address: "3445 Ontario Street, Vancouver, BC, Canada",
-    lat: 49.2543168,
-    lon: -123.1048422,
+    address: "5897 Keith Street, Burnaby, BC, Canada",
+    lat: 49.2076328,
+    lon: -122.9774472,
   },
   {
-    address: "1289 West 27th Avenue, Vancouver, BC, Canada",
-    lat: 49.247513,
-    lon: -123.1339775,
+    address: "5915 Ewart Street, Burnaby, BC, Canada",
+    lat: 49.2104684,
+    lon: -122.9766248,
   },
   {
-    address: "3199 West 5th Avenue, Burnaby, BC, Canada",
-    lat: 49.26761639999999,
-    lon: -123.1758181,
+    address: "8325 Royal Oak Avenue, Burnaby, BC, Canada",
+    lat: 49.2088823,
+    lon: -122.9888296,
   },
   {
-    address: "4136 Webber Avenue, Vancouver, BC, Canada",
-    lat: 49.24828230000001,
-    lon: -123.0987814,
+    address: "5398 Neville Street, Burnaby, BC, Canada",
+    lat: 49.2139562,
+    lon: -122.9857457,
   },
   {
-    address: "2116 West Avenue, Vancouver, BC, Canada",
-    lat: 49.2289974,
-    lon: -123.156436,
+    address: "3522 Swansacre, Vancouver, BC, Canada",
+    lat: 49.2122139,
+    lon: -123.0284378,
+  },
+  {
+    address: "8418 Keystone Street, Vancouver, BC, Canada",
+    lat: 49.2076518,
+    lon: -123.0342188,
+  },
+  {
+    address: "1715 Island Avenue, Vancouver, BC, Canada",
+    lat: 49.2100768,
+    lon: -123.0707865,
+  },
+  {
+    address: "7288 17th Avenue, Burnaby, BC, Canada",
+    lat: 49.21653000000001,
+    lon: -122.9489163,
+  },
+  {
+    address: "1945 London Street, New Westminster, BC, Canada",
+    lat: 49.2052831,
+    lon: -122.9511485,
+  },
+  {
+    address: "6851 Hersham Avenue, Burnaby, BC, Canada",
+    lat: 49.2250854,
+    lon: -122.9473389,
   },
 ];
 
@@ -60,7 +85,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
 
   console.log(`Created group with ID: ${groupId} and Name: ${groupName}`);
 
-  const userIds: string[] = [currentUserId];
+  const userIds: string[] = [];
   await db.insert(usersToGroups).values({
     id: uuid(),
     userId: currentUserId,
@@ -103,7 +128,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       year: faker.date.past().getFullYear().toString(),
       licensePlate: faker.vehicle.vrm(),
       color: faker.color.human(),
-      numberOfSeats: faker.number.int({ min: 3, max: 7 }),
+      numberOfSeats: faker.number.int({ min: 4, max: 6 }),
     });
 
     console.log(
@@ -174,7 +199,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       childId: childId,
       isApproved: 0,
       startingAddress: address,
-      endingAddress: "BCIT Willingdon Avenue, Burnaby, BC, Canada",
+      endingAddress: "6111 River Rd, Richmond, BC, Canada",
       startingLatitude: lat.toString(),
       startingLongitude: lon.toString(),
       endingLatitude: endLat.toString(),

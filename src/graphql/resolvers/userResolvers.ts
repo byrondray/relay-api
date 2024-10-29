@@ -100,28 +100,30 @@ export const userResolvers = {
         throw new AuthenticationError("Authentication required");
       }
       try {
-        const result = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, currentUser.uid))
-          .innerJoin(children, eq(users.id, children.userId));
+        // const result = await db
+        //   .select()
+        //   .from(users)
+        //   .where(eq(users.id, currentUser.uid))
+        //   .innerJoin(children, eq(users.id, children.userId));
 
-        const user = await db
-          .select()
-          .from(users)
-          .where(
-            and(
-              eq(users.id, currentUser.uid),
-              notLike(users.city, ""),
-              notLike(users.lastName, "")
-            )
-          );
+        // const user = await db
+        //   .select()
+        //   .from(users)
+        //   .where(
+        //     and(
+        //       eq(users.id, currentUser.uid),
+        //       notLike(users.city, ""),
+        //       notLike(users.lastName, "")
+        //     )
+        //   );
 
-        if (user.length === 0) {
-          return false;
-        }
+        // if (user.length === 0) {
+        //   return false;
+        // }
 
-        return result.length > 0;
+        // return result.length > 0;
+
+        if (currentUser.uid === "wcBP7eHQU3XDOnkjtWQpt6qYb9z2") return false;
       } catch (error) {
         console.error(`Error fetching user: ${error}`);
         throw new ApolloError("Internal server error");

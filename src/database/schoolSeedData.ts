@@ -587,4 +587,10 @@ export const schoolsArray = [
     Address: "6100 BATTISON ST",
     City: "VANCOUVER",
   },
+  {
+    "District Number": 41,
+    "Display Name": "Edmonds Community School",
+    Address: "7651 18th Avenue",
+    City: "BURNABY",
+  },
 ];

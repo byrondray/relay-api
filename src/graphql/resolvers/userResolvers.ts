@@ -255,9 +255,8 @@ export const userResolvers = {
 
         return {
           id: updatedUser[0].id,
-          name: `${updatedUser[0].firstName} ${
-            updatedUser[0].lastName || ""
-          }`.trim(),
+          firstName: updatedUser[0].firstName,
+          lastName: updatedUser[0]?.lastName ?? "",
           email: updatedUser[0].email,
           expoPushToken: updatedUser[0].expoPushToken,
         };

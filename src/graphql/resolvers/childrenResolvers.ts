@@ -78,8 +78,6 @@ export const childResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      console.log();
-
       const school = await db
         .select()
         .from(schools)

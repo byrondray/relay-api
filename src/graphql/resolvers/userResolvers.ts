@@ -122,6 +122,7 @@ export const userResolvers = {
         // return result.length > 0;
 
         if (currentUser.uid === "wcBP7eHQU3XDOnkjtWQpt6qYb9z2") return false;
+        return true;
       } catch (error) {
         console.error(`Error fetching user: ${error}`);
         throw new ApolloError("Internal server error");

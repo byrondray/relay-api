@@ -13,9 +13,7 @@ import {
 import { Request } from "express";
 import { getDB } from "../../database/client";
 import { UserInsert, users } from "../../database/schema/users";
-import { and, eq, notLike } from "drizzle-orm";
-import { vehicle } from "../../database/schema/vehicle";
-import { children } from "../../database/schema/children";
+import { eq } from "drizzle-orm";
 
 const db = getDB();
 
@@ -239,6 +237,7 @@ export const userResolvers = {
         });
       }
     },
+
     updateExpoPushToken: async (
       _: any,
       { userId, expoPushToken }: { userId: string; expoPushToken: string },
@@ -273,6 +272,7 @@ export const userResolvers = {
         );
       }
     },
+
     updateUserInfo: async (
       _: any,
       {

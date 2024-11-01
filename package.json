@@ -12,13 +12,13 @@
     "generate": "bunx drizzle-kit generate",
     "seed": "bun run src/database/seed.ts",
     "seed-user": "bun run src/database/seedForUser.ts",
+    "seed-schools": "bun run src/database/seedSchoolsAndCommCenters.ts",
     "studio": "bunx drizzle-kit studio"
   },
   "author": "Relay Rideshare",
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^4.11.0",
-    "@faker-js/faker": "^9.0.3",
     "@graphql-tools/merge": "^9.0.7",
     "@graphql-tools/schema": "^10.0.6",
     "@langchain/openai": "^0.3.7",
@@ -43,6 +43,7 @@
     "@types/express-session": "^1.18.0",
     "@types/faker": "^6.6.9",
     "@types/uuid": "^10.0.0",
-    "drizzle-kit": "^0.24.2"
+    "drizzle-kit": "^0.24.2",
+    "@faker-js/faker": "^9.0.3"
   }
 }

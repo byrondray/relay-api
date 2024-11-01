@@ -4,7 +4,7 @@ import { users } from "./users";
 import { schools } from "./schools";
 
 export const children = sqliteTable("children", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().notNull(),
   userId: text("user_id")
     .references(() => users.id)
     .notNull(),

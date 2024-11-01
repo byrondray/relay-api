@@ -4,9 +4,10 @@ import { carpools } from "../../database/schema/carpool";
 import { requests } from "../../database/schema/carpoolRequests";
 import { users } from "../../database/schema/users";
 import { children } from "../../database/schema/children";
-import { eq, and, gte, lt } from "drizzle-orm";
+import { eq, and, gte, lt, inArray } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
+import { childToRequest } from "../../database/schema/requestToChildren";
 
 const db = getDB();
 
@@ -99,33 +100,37 @@ export const carpoolResolvers = {
 
       const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
 
-      const approvedRequests = await db
-        .select({
-          carpoolId: requests.carpoolId,
-          parentId: requests.parentId,
-          childId: requests.childId,
-          isApproved: requests.isApproved,
-          childFirstName: children.firstName,
-          parentName: users.firstName,
+      const approvedRequests = await Promise.all(
+        carpoolIds.map(async (carpoolId) => {
+          const requestsForCarpool = await db
+            .select({
+              carpoolId: requests.carpoolId,
+              parentId: requests.parentId,
+              childFirstName: children.firstName,
+              parentName: users.firstName,
+            })
+            .from(requests)
+            .innerJoin(
+              childToRequest,
+              eq(childToRequest.requestId, requests.id)
+            )
+            .innerJoin(children, eq(childToRequest.childId, children.id))
+            .innerJoin(users, eq(requests.parentId, users.id))
+            .where(
+              and(eq(requests.isApproved, 1), eq(requests.carpoolId, carpoolId))
+            );
+          return { carpoolId, requestsForCarpool };
         })
-        .from(requests)
-        .innerJoin(children, eq(requests.childId, children.id))
-        .innerJoin(users, eq(requests.parentId, users.id))
-        .where(
-          and(
-            eq(requests.isApproved, 1),
-            gte(carpools.departureDate, today),
-            eq(carpools.groupId, groupId)
-          )
-        );
+      );
 
       return carpoolsInGroup.map((carpool) => ({
         ...carpool,
-        approvedCarpoolers: approvedRequests.filter(
-          (request) => request.carpoolId === carpool.id
-        ),
+        approvedCarpoolers:
+          approvedRequests.find((requests) => requests.carpoolId === carpool.id)
+            ?.requestsForCarpool || [],
       }));
     },
+
     getCarpoolersByGroupWithoutApprovedRequests: async (
       _: any,
       {
@@ -142,25 +147,11 @@ export const carpoolResolvers = {
 
       const today = new Date().toISOString().split("T")[0];
 
-      // const carpoolsInGroup = await db
-      //   .select()
-      //   .from(carpools)
-      //   .where(
-      //     and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
-      //   );
-
-      // if (carpoolsInGroup.length === 0) {
-      //   return [];
-      // }
-
-      // const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
-
       const notApprovedRequests = await db
         .select({
           id: requests.id,
           carpoolId: requests.carpoolId,
           parentId: requests.parentId,
-          childId: requests.childId,
           groupId: requests.groupId,
           isApproved: requests.isApproved,
           startAddress: requests.startingAddress,
@@ -173,17 +164,41 @@ export const carpoolResolvers = {
           createdAt: requests.createdAt,
         })
         .from(requests)
-        .where(
-          and(
-            eq(requests.isApproved, 0),
-            eq(requests.groupId, groupId),
-            // gte(carpools.departureDate, today),
-          )
-        );
+        .where(and(eq(requests.isApproved, 0), eq(requests.groupId, groupId)));
 
-      console.log("notApprovedRequests", notApprovedRequests);
+      const requestIds = notApprovedRequests.map((request) => request.id);
 
-      return notApprovedRequests;
+      const associatedChildren = await db
+        .select({
+          requestId: childToRequest.requestId,
+          childId: children.id,
+          firstName: children.firstName,
+          schoolId: children.schoolId,
+          schoolEmailAddress: children.schoolEmailAddress,
+          imageUrl: children.imageUrl,
+        })
+        .from(childToRequest)
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .where(inArray(childToRequest.requestId, requestIds));
+
+      const childrenByRequestId = associatedChildren.reduce((acc, child) => {
+        if (!acc[child.requestId]) {
+          acc[child.requestId] = [];
+        }
+        acc[child.requestId].push({
+          id: child.childId,
+          firstName: child.firstName,
+          schoolId: child.schoolId,
+          schoolEmailAddress: child.schoolEmailAddress,
+          imageUrl: child.imageUrl,
+        });
+        return acc;
+      }, {} as Record<string, Array<any>>);
+
+      return notApprovedRequests.map((request) => ({
+        ...request,
+        children: childrenByRequestId[request.id] || [],
+      }));
     },
   },
 
@@ -205,6 +220,7 @@ export const carpoolResolvers = {
         extraCarSeat,
         winterTires,
         tripPreferences,
+        requestIds,
       }: any,
       { currentUser }: FirebaseUser
     ) => {
@@ -237,18 +253,26 @@ export const carpoolResolvers = {
 
       const result = await db.insert(carpools).values(newCarpool);
 
-      if (result) {
-        return newCarpool;
-      } else {
+      if (!result) {
         throw new ApolloError("Failed to create carpool");
       }
-    },
 
+      await Promise.all(
+        requestIds.map(async (requestId: string) => {
+          await db
+            .update(requests)
+            .set({ carpoolId: newCarpool.id, isApproved: 1 })
+            .where(eq(requests.id, requestId));
+        })
+      );
+
+      return newCarpool;
+    },
     createRequest: async (
       _: any,
       {
         parentId,
-        childId,
+        childIds,
         carpoolId,
         groupId,
         startingAddress,
@@ -260,7 +284,7 @@ export const carpoolResolvers = {
         pickupTime,
       }: {
         parentId: string;
-        childId: string;
+        childIds: string[];
         groupId: string;
         startingAddress: string;
         endingAddress: string;
@@ -277,14 +301,13 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      if (!parentId || !childId) {
+      if (!parentId || !childIds || childIds.length === 0) {
         throw new ApolloError("Missing required fields");
       }
 
       const newRequest = {
         id: uuid(),
         parentId,
-        childId,
         carpoolId: carpoolId || "",
         groupId,
         startingAddress,
@@ -300,13 +323,30 @@ export const carpoolResolvers = {
 
       const result = await db.insert(requests).values(newRequest);
 
-      if (result) {
-        return newRequest;
-      } else {
+      if (!result) {
         throw new ApolloError("Failed to create request");
       }
-    },
 
+      await Promise.all(
+        childIds.map(async (childId: string) => {
+          await db.insert(childToRequest).values({
+            id: uuid(),
+            childId,
+            requestId: newRequest.id,
+          });
+        })
+      );
+
+      const associatedChildren = await db
+        .select()
+        .from(children)
+        .where((child) => inArray(child.id, childIds));
+
+      return {
+        ...newRequest,
+        children: associatedChildren,
+      };
+    },
     approveRequest: async (
       _: any,
       { requestId }: { requestId: string },

@@ -1,18 +1,15 @@
+// requests.ts
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { carpools } from "./carpool";
 import { users } from "./users";
-import { children } from "./children";
-import { sql } from "drizzle-orm";
 import { groups } from "./groups";
+import { sql } from "drizzle-orm";
 
 export const requests = sqliteTable("requests", {
   id: text("id").primaryKey().notNull(),
   carpoolId: text("carpool_id").references(() => carpools.id),
   parentId: text("parent_id")
     .references(() => users.id)
-    .notNull(),
-  childId: text("child_id")
-    .references(() => children.id)
     .notNull(),
   groupId: text("group_id")
     .references(() => groups.id)

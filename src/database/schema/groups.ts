@@ -3,7 +3,7 @@ import { schools } from "./schools";
 import { communityCenters } from "./communityCenters";
 
 export const groups = sqliteTable("groups", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().notNull(),
   name: text("name").notNull(),
   schoolId: text("school_id").references(() => schools.id),
   communityCenterId: text("community_center_id").references(

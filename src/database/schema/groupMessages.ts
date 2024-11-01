@@ -3,7 +3,7 @@ import { groups } from "./groups";
 import { users } from "./users";
 
 export const groupMessages = sqliteTable("groupMessages", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().notNull(),
   groupId: text("group_id")
     .references(() => groups.id)
     .notNull(),

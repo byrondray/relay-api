@@ -1,7 +1,7 @@
 import { sqliteTable, text, real } from "drizzle-orm/sqlite-core";
 
 export const communityCenters = sqliteTable("communityCenter", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().notNull(),
   name: text("name").notNull(),
   address: text("address").notNull(),
   lat: real("lat").notNull(),

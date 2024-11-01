@@ -3,8 +3,9 @@ import { users } from "./users";
 import { vehicle } from "./vehicle";
 import { sql } from "drizzle-orm";
 import { groups } from "./groups";
+
 export const carpools = sqliteTable("carpools", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().notNull(),
   driverId: text("driver_id")
     .references(() => users.id)
     .notNull(),

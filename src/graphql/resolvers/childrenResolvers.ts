@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { schools } from "../../database/schema/schools";
 import { type FirebaseUser } from "./userResolvers";
+import { groups } from "../../database/schema/groups";
+import { usersToGroups } from "../../database/schema/usersToGroups";
 
 const db = getDB();
 
@@ -97,7 +99,23 @@ export const childResolvers = {
         createdAt: new Date().toISOString(),
       };
 
-      console.log("childData", childData);
+      const group = await db
+        .select({ group: groups })
+        .from(groups)
+        .where(eq(groups.schoolId, school[0].id));
+
+      const userToGroups = await db
+        .insert(usersToGroups)
+        .values({
+          id: uuid(),
+          userId: currentUser.uid,
+          groupId: group[0].group.id,
+        })
+        .returning();
+
+      if (!userToGroups) {
+        throw new ApolloError("Failed to create user to group mapping");
+      }
 
       const result = await db.insert(children).values(childData);
 

@@ -13,6 +13,7 @@ import { faker } from "@faker-js/faker";
 import { v4 as uuid } from "uuid";
 import { schoolsArray } from "./schoolSeedData";
 import { commCenterData } from "./commCenterData";
+import { childToRequest } from "./schema/requestToChildren";
 
 const db = getDB();
 
@@ -164,22 +165,43 @@ const seedDatabase = async () => {
   for (let i = 0; i < 10; i++) {
     const { lat: startLat, lon: startLon } = getRandomVancouverLatLon();
     const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
-    await db.insert(requests).values({
-      id: uuid(),
-      carpoolId: faker.helpers.arrayElement(carpoolIds),
-      groupId: faker.helpers.arrayElement(groupIds),
-      parentId: faker.helpers.arrayElement(userIds),
-      childId: faker.helpers.arrayElement(childIds),
-      isApproved: faker.datatype.boolean() ? 1 : 0,
-      createdAt: new Date().toISOString(),
-      startingAddress: faker.location.streetAddress(),
-      endingAddress: faker.location.streetAddress(),
-      startingLatitude: startLat.toString(),
-      startingLongitude: startLon.toString(),
-      endingLatitude: endLat.toString(),
-      endingLongitude: endLon.toString(),
-      pickupTime: faker.date.future().toISOString(),
-    });
+
+    // Insert request
+    const request = await db
+      .insert(requests)
+      .values({
+        id: uuid(),
+        carpoolId: faker.helpers.arrayElement(carpoolIds),
+        groupId: faker.helpers.arrayElement(groupIds),
+        parentId: faker.helpers.arrayElement(userIds),
+        isApproved: faker.datatype.boolean() ? 1 : 0,
+        startingAddress: faker.location.streetAddress(),
+        endingAddress: faker.location.streetAddress(),
+        startingLatitude: startLat.toString(),
+        startingLongitude: startLon.toString(),
+        endingLatitude: endLat.toString(),
+        endingLongitude: endLon.toString(),
+        pickupTime: faker.date.future().toISOString(),
+        createdAt: new Date().toISOString(),
+      })
+      .returning();
+
+    const requestId = request[0].id;
+
+    const numberOfChildren = faker.number.int({ min: 1, max: 3 });
+    for (let j = 0; j < numberOfChildren; j++) {
+      const childId = faker.helpers.arrayElement(childIds);
+
+      await db.insert(childToRequest).values({
+        id: uuid(),
+        childId: childId,
+        requestId: requestId,
+      });
+    }
+
+    console.log(
+      `Created request for parent: ${request[0].parentId} with ${numberOfChildren} children`
+    );
   }
 
   console.log("Seeding complete");

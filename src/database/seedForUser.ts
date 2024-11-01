@@ -8,6 +8,7 @@ import { children } from "./schema/children";
 import { usersToGroups } from "./schema/usersToGroups";
 import { vehicle } from "./schema/vehicle";
 import { schools } from "./schema/schools";
+import { childToRequest } from "./schema/requestToChildren";
 
 const getRandomVancouverLatLon = () => {
   const lat = faker.number.float({ min: 49.2, max: 49.3 });
@@ -98,26 +99,27 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     `Added current user with ID: ${currentUserId} to group: ${groupId}`
   );
 
+  // Create two specific children for the current user
+  const currentUserChildIds: string[] = [];
   for (let i = 0; i < childImageUrls.length; i++) {
     const imageUrl = childImageUrls[i];
-    if (imageUrl) {
-      const childId = uuid();
-      await db.insert(children).values({
-        id: childId,
-        userId: currentUserId,
-        firstName: faker.person.firstName(),
-        schoolId: Array.from(schoolsArr)[i].id,
-        schoolEmailAddress: faker.internet.email(),
-        createdAt: new Date().toISOString(),
-        imageUrl,
-      });
-
-      console.log(
-        `Created child with ID: ${childId} for user: ${currentUserId} with image: ${imageUrl}`
-      );
-    }
+    const childId = uuid();
+    await db.insert(children).values({
+      id: childId,
+      userId: currentUserId,
+      firstName: faker.person.firstName(),
+      schoolId: Array.from(schoolsArr)[i].id,
+      schoolEmailAddress: faker.internet.email(),
+      createdAt: new Date().toISOString(),
+      imageUrl,
+    });
+    currentUserChildIds.push(childId);
+    console.log(
+      `Created child with ID: ${childId} for user: ${currentUserId} with image: ${imageUrl}`
+    );
   }
 
+  // Create vehicles for the current user
   for (let i = 0; i < 2; i++) {
     const vehicleId = uuid();
     await db.insert(vehicle).values({
@@ -137,6 +139,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   }
 
   // Seed other users and their children
+  const childIds: string[] = [...currentUserChildIds];
   for (let i = 0; i < 4; i++) {
     const userId = uuid();
     await db.insert(users).values({
@@ -157,46 +160,39 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     });
 
     console.log(`Added user with ID: ${userId} to group: ${groupId}`);
-  }
 
-  const childIds: string[] = [];
-  for (const userId of userIds) {
-    for (let i = 0; i < 2; i++) {
-      const imageUrl = faker.helpers.arrayElement(childImageUrls);
+    // Create two children for each additional user
+    for (let j = 0; j < 2; j++) {
+      const childId = uuid();
+      await db.insert(children).values({
+        id: childId,
+        userId: userId,
+        firstName: faker.person.firstName(),
+        schoolId: Array.from(schoolsArr)[j % schoolsArr.length].id,
+        schoolEmailAddress: faker.internet.email(),
+        createdAt: new Date().toISOString(),
+        imageUrl: faker.helpers.arrayElement(childImageUrls),
+      });
+      childIds.push(childId);
 
-      if (imageUrl) {
-        const childId = uuid();
-        await db.insert(children).values({
-          id: childId,
-          userId: userId,
-          firstName: faker.person.firstName(),
-          schoolId: Array.from(schoolsArr)[i].id,
-          schoolEmailAddress: faker.internet.email(),
-          createdAt: new Date().toISOString(),
-          imageUrl,
-        });
-        childIds.push(childId);
-
-        console.log(`Created child with ID: ${childId} for user: ${userId}`);
-      }
+      console.log(`Created child with ID: ${childId} for user: ${userId}`);
     }
   }
 
+  // Create requests and associate 1-3 children with each request
   let addressIndex = 0;
-
   for (let i = 0; i < 5; i++) {
     const userId = userIds[i % userIds.length];
-    const childId = childIds[i % childIds.length];
     const { address, lat, lon } = addressesInVancouver[addressIndex];
 
     const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
     const pickupTime = faker.date.future().toISOString();
 
+    const requestId = uuid();
     await db.insert(requests).values({
-      id: uuid(),
+      id: requestId,
       groupId: groupId,
       parentId: userId,
-      childId: childId,
       isApproved: 0,
       startingAddress: address,
       endingAddress: "6111 River Rd, Richmond, BC, Canada",
@@ -208,7 +204,21 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       createdAt: new Date().toISOString(),
     });
 
-    console.log(`Created request for user: ${userId} and child: ${childId}`);
+    console.log(`Created request with ID: ${requestId} for user: ${userId}`);
+
+    const numberOfChildren = faker.number.int({ min: 1, max: 3 });
+    const selectedChildIds = faker.helpers
+      .shuffle(childIds)
+      .slice(0, numberOfChildren);
+
+    for (const childId of selectedChildIds) {
+      await db.insert(childToRequest).values({
+        id: uuid(),
+        childId: childId,
+        requestId: requestId,
+      });
+      console.log(`Linked child with ID: ${childId} to request: ${requestId}`);
+    }
 
     addressIndex = (addressIndex + 1) % addressesInVancouver.length;
   }

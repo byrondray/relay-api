@@ -25,7 +25,6 @@ export const carpoolTypeDefs = gql`
     id: String!
     carpoolId: String
     parentId: String!
-    childId: String!
     groupId: String!
     isApproved: Boolean!
     startAddress: String!
@@ -35,6 +34,17 @@ export const carpoolTypeDefs = gql`
     endingLat: Float!
     endingLon: Float!
     pickupTime: String!
+    createdAt: String!
+    children: [Child!]!
+  }
+
+  type Child {
+    id: ID!
+    userId: String!
+    firstName: String!
+    schoolId: String!
+    schoolEmailAddress: String
+    imageUrl: String
     createdAt: String!
   }
 
@@ -58,12 +68,13 @@ export const carpoolTypeDefs = gql`
     extraCarSeat: Boolean
     winterTires: Boolean
     tripPreferences: String
+    requestIds: [String!]!
   }
 
   input CreateRequestInput {
     carpoolId: String
     parentId: String!
-    childId: String!
+    childIds: [String!]!
     groupId: String!
     startingAddress: String!
     endingAddress: String!

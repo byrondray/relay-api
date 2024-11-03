@@ -48,6 +48,32 @@ export const carpoolTypeDefs = gql`
     createdAt: String!
   }
 
+  type ChildWithParent {
+    id: ID!
+    firstName: String!
+    schoolId: String!
+    schoolEmailAddress: String
+    imageUrl: String
+    parent: User!
+  }
+
+  type RequestWithChildrenAndParent {
+    id: ID!
+    carpoolId: String
+    parentId: String!
+    groupId: String!
+    isApproved: Int!
+    startAddress: String!
+    endAddress: String!
+    startingLat: String!
+    startingLon: String!
+    endingLat: String!
+    endingLon: String!
+    pickupTime: String!
+    createdAt: String!
+    children: [ChildWithParent!]!
+  }
+
   type ApprovedCarpooler {
     parentName: String!
     childFirstName: String!
@@ -97,7 +123,7 @@ export const carpoolTypeDefs = gql`
       date: String!
       time: String!
       endingAddress: String!
-    ): [Request!]
+    ): [RequestWithChildrenAndParent!]
   }
 
   type CarpoolWithCarpoolers {

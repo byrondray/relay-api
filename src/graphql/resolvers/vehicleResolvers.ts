@@ -24,8 +24,6 @@ export const vehicleResolvers = {
         return result[0];
       }
 
-      console.log(result, "result");
-
       return null;
     },
     getVehicleForUser: async (
@@ -51,8 +49,6 @@ export const vehicleResolvers = {
         })
         .from(vehicle)
         .where(eq(vehicle.userId, userId));
-
-      console.log(result, "result");
 
       return result.map((v) => ({
         ...v,

@@ -55,7 +55,6 @@ export const childResolvers = {
         .select()
         .from(children)
         .where(eq(children.userId, currentUser.uid));
-      console.log("result", result);
       return result;
     },
   },

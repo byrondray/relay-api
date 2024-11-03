@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 import { FirebaseUser } from "./userResolvers";
 import { schools } from "../../database/schema/schools";
 import { communityCenters } from "../../database/schema/communityCenters";
+import { users } from "../../database/schema/users";
 
 const db = getDB();
 
@@ -64,11 +65,45 @@ export const groupResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      const result = await db
-        .select()
+      const groupsWithMembers = await db
+        .select({
+          groupId: groups.id,
+          groupName: groups.name,
+          schoolId: groups.schoolId,
+          communityCenterId: groups.communityCenterId,
+          memberId: users.id,
+          memberFirstName: users.firstName,
+          memberLastName: users.lastName,
+          memberEmail: users.email,
+        })
         .from(groups)
-        .innerJoin(usersToGroups, eq(groups.id, usersToGroups.groupId))
+        .leftJoin(usersToGroups, eq(groups.id, usersToGroups.groupId))
+        .leftJoin(users, eq(users.id, usersToGroups.userId))
         .where(eq(usersToGroups.userId, currentUser.uid));
+
+      const result = groupsWithMembers.reduce((acc: any, row: any) => {
+        let group = acc.find((g: any) => g.id === row.groupId);
+        if (!group) {
+          group = {
+            id: row.groupId,
+            name: row.groupName,
+            schoolId: row.schoolId,
+            communityCenterId: row.communityCenterId,
+            members: [],
+          };
+          acc.push(group);
+        }
+        if (row.memberId) {
+          group.members.push({
+            id: row.memberId,
+            firstName: row.memberFirstName,
+            lastName: row.memberLastName,
+            email: row.memberEmail,
+          });
+        }
+        return acc;
+      }, []);
+
       return result;
     },
   },

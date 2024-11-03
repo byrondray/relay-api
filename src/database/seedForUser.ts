@@ -9,6 +9,7 @@ import { usersToGroups } from "./schema/usersToGroups";
 import { vehicle } from "./schema/vehicle";
 import { schools } from "./schema/schools";
 import { childToRequest } from "./schema/requestToChildren";
+import { eq } from "drizzle-orm";
 
 const getRandomVancouverLatLon = () => {
   const lat = faker.number.float({ min: 49.2, max: 49.3 });
@@ -77,51 +78,102 @@ const addressesInVancouver = [
 const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   const db = getDB();
 
-  const groupId = uuid();
-  const groupName = faker.lorem.words(2);
-  await db.insert(groups).values({
-    id: groupId,
-    name: groupName,
-  });
+  console.log("Starting seeding process...");
 
-  console.log(`Created group with ID: ${groupId} and Name: ${groupName}`);
+  // Step 1: Fetch or create "Edmonds Community School" and its group
+  const school = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.name, "Edmonds Community School"))
+    .limit(1);
 
-  const userIds: string[] = [];
+  if (school.length === 0) {
+    throw new Error("School 'Edmonds Community School' does not exist.");
+  }
+  const schoolId = school[0].id;
+  console.log(`Using school ID: ${schoolId}`);
+
+  let edmondsGroup = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.name, "Edmonds Community School"))
+    .limit(1);
+
+  let groupId;
+  if (edmondsGroup.length === 0) {
+    groupId = uuid();
+    await db.insert(groups).values({
+      id: groupId,
+      name: "Edmonds Community School",
+    });
+    console.log(
+      `Created group for Edmonds Community School with ID: ${groupId}`
+    );
+  } else {
+    groupId = edmondsGroup[0].id;
+    console.log(
+      `Using existing group for Edmonds Community School with ID: ${groupId}`
+    );
+  }
+
+  // Check and log if `groupId` and `currentUserId` exist before `usersToGroups` insert
+  console.log(
+    "Checking existence of group and user before adding to usersToGroups"
+  );
+  const userExists = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, currentUserId))
+    .limit(1);
+  const groupExists = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.id, groupId))
+    .limit(1);
+  console.log(
+    `User exists: ${userExists.length > 0}, Group exists: ${
+      groupExists.length > 0
+    }`
+  );
+
+  const userGroupId = uuid();
   await db.insert(usersToGroups).values({
-    id: uuid(),
+    id: userGroupId,
     userId: currentUserId,
     groupId: groupId,
   });
-
-  const schoolsArr = await db.select().from(schools);
-
   console.log(
-    `Added current user with ID: ${currentUserId} to group: ${groupId}`
+    `Added current user with ID: ${currentUserId} to group with ID: ${groupId}`
   );
 
-  // Create two specific children for the current user
+  // Step 2: Create children for the current user, assigned to the school
   const currentUserChildIds: string[] = [];
   for (let i = 0; i < childImageUrls.length; i++) {
-    const imageUrl = childImageUrls[i];
     const childId = uuid();
+    console.log(
+      `Inserting child with childId: ${childId}, userId: ${currentUserId}, schoolId: ${schoolId}`
+    );
     await db.insert(children).values({
       id: childId,
       userId: currentUserId,
       firstName: faker.person.firstName(),
-      schoolId: Array.from(schoolsArr)[i].id,
+      schoolId: schoolId,
       schoolEmailAddress: faker.internet.email(),
       createdAt: new Date().toISOString(),
-      imageUrl,
+      imageUrl: childImageUrls[i],
     });
     currentUserChildIds.push(childId);
     console.log(
-      `Created child with ID: ${childId} for user: ${currentUserId} with image: ${imageUrl}`
+      `Created child with ID: ${childId} for user ID: ${currentUserId}`
     );
   }
 
-  // Create vehicles for the current user
+  // Step 3: Create vehicles for the current user
   for (let i = 0; i < 2; i++) {
     const vehicleId = uuid();
+    console.log(
+      `Creating vehicle with ID: ${vehicleId} for user ID: ${currentUserId}`
+    );
     await db.insert(vehicle).values({
       id: vehicleId,
       userId: currentUserId,
@@ -132,16 +184,17 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       color: faker.color.human(),
       numberOfSeats: faker.number.int({ min: 4, max: 6 }),
     });
-
     console.log(
-      `Created vehicle with ID: ${vehicleId} for user: ${currentUserId}`
+      `Created vehicle with ID: ${vehicleId} for user ID: ${currentUserId}`
     );
   }
 
-  // Seed other users and their children
+  // Step 4: Add additional users and their children, all assigned to the Edmonds group and school
+  const userIds: string[] = [currentUserId];
   const childIds: string[] = [...currentUserChildIds];
   for (let i = 0; i < 4; i++) {
     const userId = uuid();
+    console.log(`Creating user with ID: ${userId}`);
     await db.insert(users).values({
       id: userId,
       firstName: faker.person.firstName(),
@@ -153,42 +206,42 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     });
     userIds.push(userId);
 
+    console.log(`Adding user ${userId} to group ${groupId}`);
     await db.insert(usersToGroups).values({
       id: uuid(),
       userId: userId,
       groupId: groupId,
     });
 
-    console.log(`Added user with ID: ${userId} to group: ${groupId}`);
-
-    // Create two children for each additional user
     for (let j = 0; j < 2; j++) {
       const childId = uuid();
+      console.log(
+        `Creating child with ID: ${childId} for user ID: ${userId} and school ID: ${schoolId}`
+      );
       await db.insert(children).values({
         id: childId,
         userId: userId,
         firstName: faker.person.firstName(),
-        schoolId: Array.from(schoolsArr)[j % schoolsArr.length].id,
+        schoolId: schoolId,
         schoolEmailAddress: faker.internet.email(),
         createdAt: new Date().toISOString(),
         imageUrl: faker.helpers.arrayElement(childImageUrls),
       });
       childIds.push(childId);
-
-      console.log(`Created child with ID: ${childId} for user: ${userId}`);
     }
   }
 
-  // Create requests and associate 1-3 children with each request
+  console.log("Step 5: Creating requests and linking children");
   let addressIndex = 0;
   for (let i = 0; i < 5; i++) {
     const userId = userIds[i % userIds.length];
-    const { address, lat, lon } = addressesInVancouver[addressIndex];
-
-    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
-    const pickupTime = faker.date.future().toISOString();
-
     const requestId = uuid();
+    const { address, lat, lon } = addressesInVancouver[addressIndex];
+    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
+
+    console.log(
+      `Creating request with ID: ${requestId}, groupId: ${groupId}, userId: ${userId}`
+    );
     await db.insert(requests).values({
       id: requestId,
       groupId: groupId,
@@ -200,30 +253,25 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       startingLongitude: lon.toString(),
       endingLatitude: endLat.toString(),
       endingLongitude: endLon.toString(),
-      pickupTime: pickupTime,
+      pickupTime: faker.date.future().toISOString(),
       createdAt: new Date().toISOString(),
     });
 
-    console.log(`Created request with ID: ${requestId} for user: ${userId}`);
-
-    const numberOfChildren = faker.number.int({ min: 1, max: 3 });
     const selectedChildIds = faker.helpers
       .shuffle(childIds)
-      .slice(0, numberOfChildren);
-
+      .slice(0, faker.number.int({ min: 1, max: 3 }));
     for (const childId of selectedChildIds) {
+      console.log(`Linking child ID: ${childId} to request ID: ${requestId}`);
       await db.insert(childToRequest).values({
         id: uuid(),
         childId: childId,
         requestId: requestId,
       });
-      console.log(`Linked child with ID: ${childId} to request: ${requestId}`);
     }
-
     addressIndex = (addressIndex + 1) % addressesInVancouver.length;
   }
 
-  console.log(`Seeding complete for group: ${groupId}`);
+  console.log("Seeding complete.");
 };
 
 seedCarpoolRequestsWithNewGroup("hkdSMSsaZIg4tJE8q4fC8ejp1hO2")

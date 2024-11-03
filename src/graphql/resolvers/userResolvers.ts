@@ -223,8 +223,6 @@ export const userResolvers = {
 
         req.session.userId = userRecord[0].id;
 
-        console.log("firstName", userRecord[0].firstName);
-
         return {
           id: userRecord[0].id,
           firstName: userRecord[0].firstName ?? "",

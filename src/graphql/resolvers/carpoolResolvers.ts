@@ -1,13 +1,15 @@
 import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
 import { carpools } from "../../database/schema/carpool";
-import { requests } from "../../database/schema/carpoolRequests";
+import { RequestInsert, requests } from "../../database/schema/carpoolRequests";
 import { users } from "../../database/schema/users";
 import { children } from "../../database/schema/children";
 import { eq, and, gte, lt, inArray } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
+import { CreateRequestInput } from "../generated";
+import { groups } from "../../database/schema/groups";
 
 const db = getDB();
 
@@ -145,8 +147,6 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      const today = new Date().toISOString().split("T")[0];
-
       const notApprovedRequests = await db
         .select({
           id: requests.id,
@@ -176,9 +176,15 @@ export const carpoolResolvers = {
           schoolId: children.schoolId,
           schoolEmailAddress: children.schoolEmailAddress,
           imageUrl: children.imageUrl,
+          userId: users.id,
+          parentFirstName: users.firstName,
+          parentLastName: users.lastName,
+          parentEmail: users.email,
+          parentPhoneNumber: users.phoneNumber,
         })
         .from(childToRequest)
         .innerJoin(children, eq(childToRequest.childId, children.id))
+        .innerJoin(users, eq(children.userId, users.id))
         .where(inArray(childToRequest.requestId, requestIds));
 
       const childrenByRequestId = associatedChildren.reduce((acc, child) => {
@@ -191,14 +197,23 @@ export const carpoolResolvers = {
           schoolId: child.schoolId,
           schoolEmailAddress: child.schoolEmailAddress,
           imageUrl: child.imageUrl,
+          parent: {
+            id: child.userId,
+            firstName: child.parentFirstName,
+            lastName: child.parentLastName,
+            email: child.parentEmail,
+            phoneNumber: child.parentPhoneNumber,
+          },
         });
         return acc;
       }, {} as Record<string, Array<any>>);
 
-      return notApprovedRequests.map((request) => ({
+      const res =  notApprovedRequests.map((request) => ({
         ...request,
         children: childrenByRequestId[request.id] || [],
       }));
+      console.log(res[0].children[0], "result");
+      return res;
     },
   },
 
@@ -270,7 +285,14 @@ export const carpoolResolvers = {
     },
     createRequest: async (
       _: any,
-      {
+      { input }: { input: CreateRequestInput },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const {
         parentId,
         childIds,
         carpoolId,
@@ -282,33 +304,41 @@ export const carpoolResolvers = {
         endingLat,
         endingLon,
         pickupTime,
-      }: {
-        parentId: string;
-        childIds: string[];
-        groupId: string;
-        startingAddress: string;
-        endingAddress: string;
-        startingLat: number;
-        startingLon: number;
-        endingLat: number;
-        endingLon: number;
-        pickupTime: string;
-        carpoolId?: string;
-      },
-      { currentUser }: FirebaseUser
-    ) => {
-      if (!currentUser || currentUser.uid !== parentId) {
-        throw new ApolloError("Authentication required");
+      } = input;
+
+      // Check for the existence of parentId in users
+      const userExists = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, currentUser.uid));
+      if (userExists.length === 0) {
+        throw new ApolloError("Parent user does not exist in users table");
       }
 
-      if (!parentId || !childIds || childIds.length === 0) {
-        throw new ApolloError("Missing required fields");
+      // Check for the existence of groupId in groups
+      const groupExists = await db
+        .select()
+        .from(groups)
+        .where(eq(groups.id, groupId));
+      if (groupExists.length === 0) {
+        throw new ApolloError("Group does not exist in groups table");
       }
 
+      // Validate each childId in children
+      const childrenExist = await db
+        .select()
+        .from(children)
+        .where(inArray(children.id, childIds));
+      if (childrenExist.length !== childIds.length) {
+        throw new ApolloError(
+          "One or more children do not exist in children table"
+        );
+      }
+
+      // Create the new request object
       const newRequest = {
         id: uuid(),
-        parentId,
-        carpoolId: carpoolId || "",
+        parentId: currentUser.uid,
         groupId,
         startingAddress,
         endingAddress,
@@ -321,12 +351,13 @@ export const carpoolResolvers = {
         createdAt: new Date().toISOString(),
       };
 
+      // Insert the request into the database
       const result = await db.insert(requests).values(newRequest);
-
       if (!result) {
         throw new ApolloError("Failed to create request");
       }
 
+      // Insert each child-to-request relationship
       await Promise.all(
         childIds.map(async (childId: string) => {
           await db.insert(childToRequest).values({
@@ -337,11 +368,13 @@ export const carpoolResolvers = {
         })
       );
 
+      // Retrieve associated children for the response
       const associatedChildren = await db
         .select()
         .from(children)
-        .where((child) => inArray(child.id, childIds));
+        .where(inArray(children.id, childIds));
 
+      // Return the new request with associated children
       return {
         ...newRequest,
         children: associatedChildren,

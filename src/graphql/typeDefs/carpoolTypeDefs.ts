@@ -95,6 +95,7 @@ export const carpoolTypeDefs = gql`
     winterTires: Boolean
     tripPreferences: String
     requestIds: [String!]!
+    driverChildIds: [String!]!
   }
 
   input CreateRequestInput {

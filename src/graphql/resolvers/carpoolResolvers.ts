@@ -8,7 +8,7 @@ import { eq, and, gte, lt, inArray } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
-import { CreateRequestInput } from "../generated";
+import { CreateCarpoolInput, CreateRequestInput } from "../generated";
 import { groups } from "../../database/schema/groups";
 
 const db = getDB();
@@ -208,7 +208,7 @@ export const carpoolResolvers = {
         return acc;
       }, {} as Record<string, Array<any>>);
 
-      const res =  notApprovedRequests.map((request) => ({
+      const res = notApprovedRequests.map((request) => ({
         ...request,
         children: childrenByRequestId[request.id] || [],
       }));
@@ -220,7 +220,10 @@ export const carpoolResolvers = {
   Mutation: {
     createCarpool: async (
       _: any,
-      {
+      { input }: { input: CreateCarpoolInput },
+      { currentUser }: FirebaseUser
+    ) => {
+      const {
         driverId,
         vehicleId,
         groupId,
@@ -236,9 +239,46 @@ export const carpoolResolvers = {
         winterTires,
         tripPreferences,
         requestIds,
-      }: any,
-      { currentUser }: FirebaseUser
-    ) => {
+        driverChildIds,
+      } = input;
+
+      console.log(
+        driverId,
+        "driverId",
+        vehicleId,
+        "vehicleId",
+        groupId,
+        "groupId",
+        startAddress,
+        "startAddress",
+        endAddress,
+        "endAddress",
+        startLat,
+        "startLat",
+        startLon,
+        "startLon",
+        endLat,
+        "endLat",
+        endLon,
+        "endLon",
+        departureDate,
+        "departureDate",
+        departureTime,
+        "departureTime",
+        extraCarSeat,
+        "extraCarSeat",
+        winterTires,
+        "winterTires",
+        tripPreferences,
+        "tripPreferences",
+        requestIds,
+        "requestIds",
+        driverChildIds,
+        "driverChildIds",
+        currentUser,
+        "currentUser"
+      );
+
       if (!currentUser || currentUser.uid !== driverId) {
         throw new ApolloError("Authentication required");
       }
@@ -247,6 +287,7 @@ export const carpoolResolvers = {
         throw new ApolloError("Missing required fields");
       }
 
+      // Create a new carpool
       const newCarpool = {
         id: uuid(),
         driverId,
@@ -266,20 +307,41 @@ export const carpoolResolvers = {
         createdAt: new Date().toISOString(),
       };
 
-      const result = await db.insert(carpools).values(newCarpool);
+      const carpoolResult = await db.insert(carpools).values(newCarpool);
 
-      if (!result) {
+      if (!carpoolResult) {
         throw new ApolloError("Failed to create carpool");
       }
 
       await Promise.all(
-        requestIds.map(async (requestId: string) => {
+        requestIds.map(async (requestId) => {
           await db
             .update(requests)
             .set({ carpoolId: newCarpool.id, isApproved: 1 })
             .where(eq(requests.id, requestId));
         })
       );
+
+      if (driverChildIds.length > 0) {
+        const driverRequest = {
+          id: uuid(),
+          carpoolId: newCarpool.id,
+          parentId: driverId,
+          groupId,
+          isApproved: 1,
+          startingAddress: startAddress,
+          endingAddress: endAddress,
+          startingLatitude: startLat.toString(),
+          startingLongitude: startLon.toString(),
+          endingLatitude: endLat.toString(),
+          endingLongitude: endLon.toString(),
+          pickupTime: departureTime,
+          childIds: driverChildIds.join(","),
+          createdAt: new Date().toISOString(),
+        };
+
+        await db.insert(requests).values(driverRequest);
+      }
 
       return newCarpool;
     },

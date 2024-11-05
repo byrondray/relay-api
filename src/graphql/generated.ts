@@ -108,6 +108,7 @@ export type Conversation = {
 export type CreateCarpoolInput = {
   departureDate: Scalars['String']['input'];
   departureTime: Scalars['String']['input'];
+  driverChildIds: Array<Scalars['String']['input']>;
   driverId: Scalars['String']['input'];
   endAddress: Scalars['String']['input'];
   endLat: Scalars['Float']['input'];

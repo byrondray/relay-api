@@ -71,6 +71,7 @@ export const groupResolvers = {
           groupName: groups.name,
           schoolId: groups.schoolId,
           communityCenterId: groups.communityCenterId,
+          imageUrl: groups.imageUrl,
           memberId: users.id,
           memberFirstName: users.firstName,
           memberLastName: users.lastName,
@@ -89,6 +90,7 @@ export const groupResolvers = {
             name: row.groupName,
             schoolId: row.schoolId,
             communityCenterId: row.communityCenterId,
+            imageUrl: row.imageUrl,
             members: [],
           };
           acc.push(group);

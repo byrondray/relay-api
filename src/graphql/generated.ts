@@ -101,7 +101,7 @@ export type CommunityCenter = {
 
 export type Conversation = {
   __typename?: 'Conversation';
-  messages: Array<Message>;
+  messages: Array<DetailedMessage>;
   recipientName: Scalars['String']['output'];
 };
 
@@ -156,6 +156,7 @@ export type Group = {
   __typename?: 'Group';
   communityCenterId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
   members: Array<User>;
   name: Scalars['String']['output'];
   schoolId?: Maybe<Scalars['String']['output']>;
@@ -195,7 +196,7 @@ export type Mutation = {
   createChild: Child;
   createGroup: Group;
   createGroupMessage: GroupMessage;
-  createMessage: Message;
+  createMessage: DetailedMessage;
   createRequest: Request;
   createUser: AuthPayload;
   createVehicle: Vehicle;
@@ -331,7 +332,7 @@ export type Query = {
   getGroupWithUsers: Group;
   getGroups: Array<Group>;
   getPastCarpools?: Maybe<Array<Carpool>>;
-  getPrivateMessageConversation: Array<Message>;
+  getPrivateMessageConversation: Array<DetailedMessage>;
   getUser?: Maybe<User>;
   getUsers: Array<User>;
   getVehicle?: Maybe<Vehicle>;
@@ -472,7 +473,7 @@ export type School = {
 export type Subscription = {
   __typename?: 'Subscription';
   locationReceived?: Maybe<LocationData>;
-  messageSent: Message;
+  messageSent: DetailedMessage;
 };
 
 

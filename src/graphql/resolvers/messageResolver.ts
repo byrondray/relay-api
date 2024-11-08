@@ -58,7 +58,10 @@ export const messageResolvers = {
             new Date(b.createdAt ?? "").getTime()
         );
 
-        return sortedMessages;
+        return {
+          recipientName: `${sortedMessages[0].recipient.firstName} ${sortedMessages[0].recipient.lastName}`,
+          messages: sortedMessages,
+        };
       } catch (error) {
         console.error(
           `Error fetching conversation between ${senderId} and ${recipientId}:`,

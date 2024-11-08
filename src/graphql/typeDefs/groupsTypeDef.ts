@@ -6,6 +6,7 @@ export const groupTypeDefs = gql`
     name: String!
     schoolId: String
     communityCenterId: String
+    imageUrl: String
     members: [User!]!
   }
 

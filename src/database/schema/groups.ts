@@ -9,6 +9,7 @@ export const groups = sqliteTable("groups", {
   communityCenterId: text("community_center_id").references(
     () => communityCenters.id
   ),
+  imageUrl: text("image_url"),
 });
 
 export type Group = typeof groups.$inferSelect;

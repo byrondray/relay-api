@@ -21,6 +21,8 @@ import { childResolvers } from "./graphql/resolvers/childrenResolvers";
 import { childTypeDefs } from "./graphql/typeDefs/childrenTypeDefs";
 import { carpoolResolvers } from "./graphql/resolvers/carpoolResolvers";
 import { carpoolTypeDefs } from "./graphql/typeDefs/carpoolTypeDefs";
+import { friendsResolvers } from "./graphql/resolvers/friendsResolver";
+import { friendsTypeDefs } from "./graphql/typeDefs/friendsTypeDef";
 import { mergeTypeDefs, mergeResolvers } from "@graphql-tools/merge";
 import { IResolvers } from "@graphql-tools/utils";
 import session from "express-session";
@@ -42,6 +44,7 @@ const typeDefs = mergeTypeDefs([
   vehicleTypeDefs,
   childTypeDefs,
   carpoolTypeDefs,
+  friendsTypeDefs,
 ]);
 
 const resolvers: IResolvers = mergeResolvers([
@@ -53,6 +56,7 @@ const resolvers: IResolvers = mergeResolvers([
   vehicleResolvers,
   childResolvers,
   carpoolResolvers,
+  friendsResolvers,
 ]);
 
 admin.initializeApp({

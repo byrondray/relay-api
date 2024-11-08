@@ -19,7 +19,7 @@ export const messageTypeDefs = gql`
 
   type Conversation {
     recipientName: String!
-    messages: [Message!]!
+    messages: [DetailedMessage!]!
   }
 
   type Query {
@@ -27,7 +27,7 @@ export const messageTypeDefs = gql`
     getPrivateMessageConversation(
       senderId: String!
       recipientId: String!
-    ): [Message!]!
+    ): [DetailedMessage!]!
   }
 
   type Mutation {
@@ -35,10 +35,10 @@ export const messageTypeDefs = gql`
       senderId: String!
       recipientId: String!
       text: String!
-    ): Message!
+    ): DetailedMessage!
   }
 
   type Subscription {
-    messageSent(recipientId: String!): Message!
+    messageSent(recipientId: String!): DetailedMessage!
   }
 `;

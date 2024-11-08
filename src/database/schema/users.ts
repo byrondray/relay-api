@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
   phoneNumber: text("phone_number"),
   city: text("city"),
   createdAt: text("created_at").default(sql`(current_timestamp)`),
+  imageUrl: text("image_url"),
   insuranceImageUrl: text("insurance_image_url"),
   licenseImageUrl: text("license_image_url"),
   expoPushToken: text("expo_push_token"),

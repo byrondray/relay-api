@@ -180,6 +180,7 @@ export const carpoolResolvers = {
           parentFirstName: users.firstName,
           parentLastName: users.lastName,
           parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
           parentPhoneNumber: users.phoneNumber,
         })
         .from(childToRequest)
@@ -202,6 +203,7 @@ export const carpoolResolvers = {
             firstName: child.parentFirstName,
             lastName: child.parentLastName,
             email: child.parentEmail,
+            imageUrl: child.parentImageUrl,
             phoneNumber: child.parentPhoneNumber,
           },
         });

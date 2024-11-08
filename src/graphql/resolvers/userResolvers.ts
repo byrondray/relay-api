@@ -68,6 +68,9 @@ export const userResolvers = {
           firstName: user.firstName,
           lastName: user.lastName,
           phoneNumber: user.phoneNumber,
+          insuranceImageUrl: user.insuranceImageUrl,
+          licenseImageUrl: user.licenseImageUrl,
+          imageUrl: user.imageUrl,
           city: user.city,
           email: user.email,
         };
@@ -281,6 +284,7 @@ export const userResolvers = {
         email,
         phoneNumber,
         city,
+        imageUrl,
         insuranceImageUrl,
         licenseImageUrl,
       }: {
@@ -290,6 +294,7 @@ export const userResolvers = {
         email: string;
         phoneNumber: string;
         city: string;
+        imageUrl?: string;
         insuranceImageUrl?: string;
         licenseImageUrl?: string;
       },
@@ -325,6 +330,8 @@ export const userResolvers = {
         updates.insurancelicenseImageUrl = licenseImageUrl;
       if (typeof insuranceImageUrl === "string" && insuranceImageUrl.trim())
         updates.insuranceImageUrl = insuranceImageUrl;
+      if (typeof imageUrl === "string" && imageUrl.trim())
+        updates.imageUrl = imageUrl;
 
       if (Object.keys(updates).length === 0) {
         throw new ApolloError("No valid fields provided for update");
@@ -349,6 +356,7 @@ export const userResolvers = {
           lastName: updatedUser.lastName,
           email: updatedUser.email,
           phone_number: updatedUser.phoneNumber,
+          imageUrl: updatedUser.imageUrl,
           licenseImageUrl: updatedUser.licenseImageUrl,
           insuranceImageUrl: updatedUser.insuranceImageUrl,
           city: updatedUser.city,

@@ -143,6 +143,15 @@ export type DeleteMemberFromGroupResponse = {
   message: Scalars['String']['output'];
 };
 
+export type DetailedMessage = {
+  __typename?: 'DetailedMessage';
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  recipient: User;
+  sender: User;
+  text: Scalars['String']['output'];
+};
+
 export type Group = {
   __typename?: 'Group';
   communityCenterId?: Maybe<Scalars['String']['output']>;
@@ -298,6 +307,7 @@ export type MutationUpdateUserInfoArgs = {
   email?: InputMaybe<Scalars['String']['input']>;
   firstName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
   insuranceImageUrl?: InputMaybe<Scalars['String']['input']>;
   lastName?: InputMaybe<Scalars['String']['input']>;
   licenseImageUrl?: InputMaybe<Scalars['String']['input']>;
@@ -483,6 +493,7 @@ export type User = {
   expoPushToken?: Maybe<Scalars['String']['output']>;
   firstName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
   insuranceImageUrl?: Maybe<Scalars['String']['output']>;
   lastName?: Maybe<Scalars['String']['output']>;
   licenseImageUrl?: Maybe<Scalars['String']['output']>;

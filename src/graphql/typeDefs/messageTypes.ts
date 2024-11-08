@@ -9,6 +9,14 @@ export const messageTypeDefs = gql`
     createdAt: String!
   }
 
+  type DetailedMessage {
+    id: ID!
+    sender: User!
+    recipient: User!
+    text: String!
+    createdAt: String!
+  }
+
   type Conversation {
     recipientName: String!
     messages: [Message!]!

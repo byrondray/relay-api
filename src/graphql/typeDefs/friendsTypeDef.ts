@@ -23,11 +23,11 @@ export const friendsTypeDefs = gql`
 
   type Query {
     getFriends: [FriendsWithUserInfo!]!
-    getFriend(userId: String!, friendId: String!): Friend!
+    getFriend(friendId: String!): FriendsWithUserInfo!
   }
 
   type Mutation {
-    addFriend(userId: String!, friendId: String!): Friend!
-    deleteFriend(userId: String!, friendId: String!): Friend!
+    addFriend(friendId: String!): Friend!
+    deleteFriend(friendId: String!): Friend!
   }
 `;

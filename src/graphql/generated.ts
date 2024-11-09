@@ -363,7 +363,7 @@ export type Query = {
   getCommunityCenters: Array<CommunityCenter>;
   getConversationsForUser: Array<Conversation>;
   getCurrentCarpools?: Maybe<Array<Carpool>>;
-  getFriend: Friend;
+  getFriend: FriendsWithUserInfo;
   getFriends: Array<FriendsWithUserInfo>;
   getGroup?: Maybe<Group>;
   getGroupMessages: Array<GroupMessage>;
@@ -425,7 +425,6 @@ export type QueryGetCurrentCarpoolsArgs = {
 
 export type QueryGetFriendArgs = {
   friendId: Scalars['String']['input'];
-  userId: Scalars['String']['input'];
 };
 
 

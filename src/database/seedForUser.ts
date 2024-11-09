@@ -10,6 +10,7 @@ import { vehicle } from "./schema/vehicle";
 import { schools } from "./schema/schools";
 import { childToRequest } from "./schema/requestToChildren";
 import { eq } from "drizzle-orm";
+import { friends } from "./schema/friends";
 
 const getRandomVancouverLatLon = () => {
   const lat = faker.number.float({ min: 49.2, max: 49.3 });
@@ -214,6 +215,18 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       expoPushToken: faker.string.uuid(),
     });
     userIds.push(userId);
+
+    const friendIds = [];
+    userIds.map(async (userId) => {
+      console.log(`Creating user with ID: ${userId}`);
+      const friendId = uuid();
+      await db.insert(friends).values({
+        id: uuid(),
+        userId: currentUserId,
+        friendId: friendId,
+      });
+      friendIds.push(friendId);
+    });
 
     console.log(`Adding user ${userId} to group ${groupId}`);
     await db.insert(usersToGroups).values({

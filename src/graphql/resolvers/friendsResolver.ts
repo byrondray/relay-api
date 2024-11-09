@@ -20,7 +20,7 @@ export const friendsResolvers = {
           id: friends.id,
           userId: friends.userId,
           createdAt: friends.createdAt,
-          friends: friends,
+          friends: users,
         })
         .from(friends)
         .where(eq(friends.userId, currentUser.uid))

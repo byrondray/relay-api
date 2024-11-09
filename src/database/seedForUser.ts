@@ -216,18 +216,6 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     });
     userIds.push(userId);
 
-    const friendIds = [];
-    userIds.map(async (userId) => {
-      console.log(`Creating user with ID: ${userId}`);
-      const friendId = uuid();
-      await db.insert(friends).values({
-        id: uuid(),
-        userId: currentUserId,
-        friendId: friendId,
-      });
-      friendIds.push(friendId);
-    });
-
     console.log(`Adding user ${userId} to group ${groupId}`);
     await db.insert(usersToGroups).values({
       id: uuid(),
@@ -252,6 +240,18 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       childIds.push(childId);
     }
   }
+
+  const friendIds = [];
+  userIds.map(async (userId) => {
+    console.log(`Creating user with ID: ${userId}`);
+    const friendId = uuid();
+    await db.insert(friends).values({
+      id: uuid(),
+      userId: currentUserId,
+      friendId: friendId,
+    });
+    friendIds.push(friendId);
+  });
 
   console.log("Step 5: Creating requests and linking children");
   let addressIndex = 0;

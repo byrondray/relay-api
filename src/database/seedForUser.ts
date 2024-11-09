@@ -246,9 +246,9 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     console.log(`Creating user with ID: ${userId}`);
     const friendId = uuid();
     await db.insert(friends).values({
-      id: uuid(),
+      id: friendId,
       userId: currentUserId,
-      friendId: friendId,
+      friendId: userId,
     });
     friendIds.push(friendId);
   });

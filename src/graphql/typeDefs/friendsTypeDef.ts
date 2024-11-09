@@ -3,20 +3,27 @@ import { gql } from "graphql-tag";
 export const friendsTypeDefs = gql`
   type Friend {
     id: ID!
-    userId: String!
-    friendId: String!
-    createdAt: String!
+    firstName: String!
+    lastName: String
+    email: String!
+    phoneNumber: String
+    city: String
+    licenseImageUrl: String
+    insuranceImageUrl: String
+    imageUrl: String
+    createdAt: String
   }
 
   type FriendsWithUserInfo {
     id: ID!
     userId: String!
     createdAt: String!
-    friends: [User]!
+    friends: Friend!
   }
 
   type Query {
-    getFriends(userId: String!): [FriendsWithUserInfo!]!
+    getFriends: [FriendsWithUserInfo!]!
+    getFriend(userId: String!, friendId: String!): Friend!
   }
 
   type Mutation {

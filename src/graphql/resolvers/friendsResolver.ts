@@ -10,7 +10,7 @@ const db = getDB();
 
 export const friendsResolvers = {
   Query: {
-    getFriends: async (_: any, { currentUser }: FirebaseUser) => {
+    getFriends: async (_: any, __: any, { currentUser }: FirebaseUser) => {
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
@@ -26,9 +26,9 @@ export const friendsResolvers = {
         .where(eq(friends.userId, currentUser.uid))
         .leftJoin(users, eq(users.id, friends.friendId));
 
-        console.log(friendsResult);
+      console.log(friendsResult);
 
-        return friendsResult;
+      return friendsResult;
     },
   },
   Mutation: {},

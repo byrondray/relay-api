@@ -18,6 +18,7 @@ export const groupResolvers = {
       { id }: { id: string },
       { currentUser }: FirebaseUser
     ) => {
+      console.log(currentUser, "THIS IS CURRENT USER");
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }

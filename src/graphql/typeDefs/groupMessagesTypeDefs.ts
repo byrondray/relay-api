@@ -7,6 +7,7 @@ export const groupMessageTypeDefs = gql`
     userId: String!
     message: String!
     createdAt: String!
+    sender: User!
   }
 
   type Query {
@@ -15,5 +16,9 @@ export const groupMessageTypeDefs = gql`
 
   type Mutation {
     createGroupMessage(groupId: String!, message: String!): GroupMessage!
+  }
+
+  type Subscription {
+    groupMessageSent(groupId: String!): GroupMessage!
   }
 `;

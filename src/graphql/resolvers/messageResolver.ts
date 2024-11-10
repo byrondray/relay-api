@@ -1,6 +1,5 @@
 import {
   createMessage,
-  getConvosForUser,
   getPrivateMessageConvo,
 } from "../../services/message.service";
 import {
@@ -37,7 +36,7 @@ export const messageResolvers = {
             new Date(b.createdAt ?? "").getTime()
         );
 
-        return sortedMessages; // Only return the sorted messages array
+        return sortedMessages;
       } catch (error) {
         console.error(
           `Error fetching conversation between ${senderId} and ${recipientId}:`,
@@ -68,7 +67,6 @@ export const messageResolvers = {
       }
 
       try {
-        // Create the message entry
         const newMessage = {
           senderId,
           recipientId,
@@ -76,9 +74,8 @@ export const messageResolvers = {
           id: uuidv4(),
           createdAt: new Date().toISOString(),
         };
-        const [createdMessage] = await createMessage(newMessage); // Assuming `createMessage` returns a list
+        const [createdMessage] = await createMessage(newMessage);
 
-        // Retrieve sender and recipient details for DetailedMessage
         const sender = await findUserById(senderId);
         const recipient = await findUserById(recipientId);
 
@@ -86,7 +83,6 @@ export const messageResolvers = {
           throw new ApolloError("Sender or recipient not found");
         }
 
-        // Construct the DetailedMessage object to match the expected client response
         const detailedMessage = {
           id: createdMessage.id,
           text: createdMessage.text,
@@ -107,12 +103,10 @@ export const messageResolvers = {
           },
         };
 
-        // Publish the message to the subscription
         pubsub.publish(`MESSAGE_SENT_${recipientId}`, {
           messageSent: detailedMessage,
         });
 
-        // Check for Expo push token and send notification
         if (recipient[0].expoPushToken) {
           await sendPushNotification(
             recipient[0].expoPushToken,

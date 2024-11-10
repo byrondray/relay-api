@@ -93,22 +93,62 @@ export const messageResolvers = {
       }
 
       try {
-        const newMessage = { senderId, recipientId, text, id: uuidv4() };
-        const [createdMessage] = await createMessage(newMessage);
+        // Create the message entry
+        const newMessage = {
+          senderId,
+          recipientId,
+          text,
+          id: uuidv4(),
+          createdAt: new Date().toISOString(),
+        };
+        const [createdMessage] = await createMessage(newMessage); // Assuming `createMessage` returns a list
 
+        // Retrieve sender and recipient details for DetailedMessage
+        const sender = await findUserById(senderId);
+        const recipient = await findUserById(recipientId);
+
+        if (!sender || !recipient) {
+          throw new ApolloError("Sender or recipient not found");
+        }
+
+        // Construct the DetailedMessage object to match the expected client response
+        const detailedMessage = {
+          id: createdMessage.id,
+          text: createdMessage.text,
+          createdAt: createdMessage.createdAt,
+          sender: {
+            id: sender[0].id,
+            firstName: sender[0].firstName,
+            lastName: sender[0].lastName,
+            email: sender[0].email,
+            imageUrl: sender[0].imageUrl,
+          },
+          recipient: {
+            id: recipient[0].id,
+            firstName: recipient[0].firstName,
+            lastName: recipient[0].lastName,
+            email: recipient[0].email,
+            imageUrl: recipient[0].imageUrl,
+          },
+        };
+
+        // Publish the message to the subscription
         pubsub.publish(`MESSAGE_SENT_${recipientId}`, {
-          messageSent: createdMessage,
+          messageSent: detailedMessage,
         });
 
-        const recipient = await findUserById(recipientId);
-        if (recipient.length > 0 && recipient[0].expoPushToken) {
-          const expoPushToken = recipient[0].expoPushToken;
-          await sendPushNotification(expoPushToken, text, senderId);
+        // Check for Expo push token and send notification
+        if (recipient[0].expoPushToken) {
+          await sendPushNotification(
+            recipient[0].expoPushToken,
+            text,
+            senderId
+          );
         } else {
           console.log("No Expo Push Token found for recipient:", recipientId);
         }
 
-        return createdMessage;
+        return detailedMessage;
       } catch (error) {
         console.error("Error creating message:", error);
         throw new ApolloError("Failed to create message.");

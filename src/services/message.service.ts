@@ -18,6 +18,9 @@ export const getConvosForUser = async (userId: string) => {
     .innerJoin(users, eq(users.id, messages.recipientId));
 };
 
+const senderUsers = { ...users };
+const recipientUsers = { ...users };
+
 export const getPrivateMessageConvo = async (
   senderId: string,
   recipientId: string
@@ -29,18 +32,18 @@ export const getPrivateMessageConvo = async (
       createdAt: messages.createdAt,
       senderId: messages.senderId,
       recipientId: messages.recipientId,
-      senderFirstName: users.firstName,
-      senderLastName: users.lastName,
-      senderEmail: users.email,
-      senderImageUrl: users.imageUrl,
-      recipientFirstName: users.firstName,
-      recipientLastName: users.lastName,
-      recipientEmail: users.email,
-      recipientImageUrl: users.imageUrl,
+      senderFirstName: senderUsers.firstName,
+      senderLastName: senderUsers.lastName,
+      senderEmail: senderUsers.email,
+      senderImageUrl: senderUsers.imageUrl,
+      recipientFirstName: recipientUsers.firstName,
+      recipientLastName: recipientUsers.lastName,
+      recipientEmail: recipientUsers.email,
+      recipientImageUrl: recipientUsers.imageUrl,
     })
     .from(messages)
-    .innerJoin(users, eq(messages.senderId, users.id))
-    .innerJoin(users, eq(messages.recipientId, users.id))
+    .innerJoin(senderUsers, eq(messages.senderId, senderUsers.id))
+    .innerJoin(recipientUsers, eq(messages.recipientId, recipientUsers.id))
     .where(
       and(
         eq(messages.senderId, senderId),

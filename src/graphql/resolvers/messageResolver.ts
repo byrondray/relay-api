@@ -47,7 +47,6 @@ export const messageResolvers = {
       }
     },
   },
-
   Mutation: {
     createMessage: async (
       _: any,

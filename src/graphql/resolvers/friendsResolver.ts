@@ -104,36 +104,42 @@ export const friendsResolvers = {
 
       throw new ApolloError("Failed to add friend");
     },
-  },
-  deleteFriend: async (
-    _: any,
-    { friendId }: { friendId: string },
-    { currentUser }: FirebaseUser
-  ) => {
-    if (!currentUser) {
-      throw new ApolloError("Authentication required");
-    }
+    deleteFriend: async (
+      _: any,
+      { friendId }: { friendId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
 
-    const existingFriend = await db
-      .select()
-      .from(friends)
-      .where(
-        and(eq(friends.userId, currentUser.uid), eq(friends.friendId, friendId))
-      );
-    if (existingFriend.length === 0) {
-      throw new ApolloError("Friend not found");
-    }
+      const existingFriend = await db
+        .select()
+        .from(friends)
+        .where(
+          and(
+            eq(friends.userId, currentUser.uid),
+            eq(friends.friendId, friendId)
+          )
+        );
+      if (existingFriend.length === 0) {
+        throw new ApolloError("Friend not found");
+      }
 
-    const result = await db
-      .delete(friends)
-      .where(
-        and(eq(friends.userId, currentUser.uid), eq(friends.friendId, friendId))
-      );
+      const result = await db
+        .delete(friends)
+        .where(
+          and(
+            eq(friends.userId, currentUser.uid),
+            eq(friends.friendId, friendId)
+          )
+        );
 
-    if (result) {
-      return { message: "Friend removed successfully" };
-    }
+      if (result) {
+        return { message: "Friend removed successfully" };
+      }
 
-    throw new ApolloError("Failed to remove friend");
+      throw new ApolloError("Failed to remove friend");
+    },
   },
 };

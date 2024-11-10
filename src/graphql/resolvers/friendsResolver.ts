@@ -1,6 +1,6 @@
 import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { FirebaseUser } from "./userResolvers";
 import { users } from "../../database/schema/users";
@@ -91,12 +91,21 @@ export const friendsResolvers = {
       if (friendsExist.length > 0) {
         throw new ApolloError("Cannot friend the same person twice");
       }
-      const result = await db.insert(friends).values({
-        id: uuid(),
-        userId: currentUser.uid,
-        friendId,
-        createdAt: new Date().toISOString(),
-      });
+
+      const result = await db.insert(friends).values([
+        {
+          id: uuid(),
+          userId: currentUser.uid,
+          friendId,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: uuid(),
+          userId: friendId,
+          friendId: currentUser.uid,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
 
       if (result) {
         return { message: "Friend added successfully" };
@@ -130,8 +139,16 @@ export const friendsResolvers = {
         .delete(friends)
         .where(
           and(
-            eq(friends.userId, currentUser.uid),
-            eq(friends.friendId, friendId)
+            or(
+              and(
+                eq(friends.userId, currentUser.uid),
+                eq(friends.friendId, friendId)
+              ),
+              and(
+                eq(friends.userId, friendId),
+                eq(friends.friendId, currentUser.uid)
+              )
+            )
           )
         );
 

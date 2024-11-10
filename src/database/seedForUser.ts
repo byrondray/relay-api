@@ -125,6 +125,42 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
     );
   }
 
+  const [currentUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, currentUserId))
+    .limit(1);
+
+  if (!currentUser) {
+    throw new Error(`User with ID ${currentUserId} does not exist.`);
+  }
+
+  // Update missing fields if necessary
+  const updatedFields: Partial<{
+    imageUrl: string;
+    lastName: string;
+    firstName: string;
+  }> = {};
+
+  if (!currentUser.imageUrl) {
+    updatedFields.imageUrl = "https://thispersondoesnotexist.com/";
+  }
+  if (!currentUser.lastName) {
+    updatedFields.lastName = faker.person.lastName();
+  }
+  if (!currentUser.firstName) {
+    updatedFields.firstName = faker.person.firstName();
+  }
+
+  // Perform the update if any fields are missing
+  if (Object.keys(updatedFields).length > 0) {
+    await db
+      .update(users)
+      .set(updatedFields)
+      .where(eq(users.id, currentUserId));
+    console.log(`Updated missing fields for user ID: ${currentUserId}`);
+  }
+
   // Check and log if `groupId` and `currentUserId` exist before `usersToGroups` insert
   console.log(
     "Checking existence of group and user before adding to usersToGroups"

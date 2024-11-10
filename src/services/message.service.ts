@@ -3,6 +3,7 @@ import { getDB } from "../database/client";
 import { messages } from "../database/schema/messages";
 import { MessageInsert } from "../database/schema/messages";
 import { users } from "../database/schema/users";
+import { alias } from "drizzle-orm/sqlite-core";
 
 let db = getDB();
 
@@ -18,13 +19,14 @@ export const getConvosForUser = async (userId: string) => {
     .innerJoin(users, eq(users.id, messages.recipientId));
 };
 
-const senderUsers = { ...users };
-const recipientUsers = { ...users };
+const senderUsers = alias(users, "sender");
+const recipientUsers = alias(users, "recipient");
 
 export const getPrivateMessageConvo = async (
   senderId: string,
   recipientId: string
 ) => {
+  console.log("senderId", senderId, recipientId);
   const messagesResult = await db
     .select({
       messageId: messages.id,

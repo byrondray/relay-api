@@ -19,27 +19,6 @@ const pubsub = new PubSub();
 
 export const messageResolvers = {
   Query: {
-    getConversationsForUser: async (
-      _: any,
-      { userId }: { userId: string },
-      { currentUser }: FirebaseUser
-    ) => {
-      if (!currentUser) {
-        throw new AuthenticationError("Authentication required");
-      }
-
-      try {
-        const conversations = await getConvosForUser(userId);
-        return conversations;
-      } catch (error) {
-        console.error(
-          `Error fetching conversations for user ${userId}:`,
-          error
-        );
-        throw new ApolloError("Failed to fetch conversations.");
-      }
-    },
-
     getPrivateMessageConversation: async (
       _: any,
       { senderId, recipientId }: { senderId: string; recipientId: string },
@@ -58,10 +37,7 @@ export const messageResolvers = {
             new Date(b.createdAt ?? "").getTime()
         );
 
-        return {
-          recipientName: `${sortedMessages[0].recipient.firstName} ${sortedMessages[0].recipient.lastName}`,
-          messages: sortedMessages,
-        };
+        return sortedMessages; // Only return the sorted messages array
       } catch (error) {
         console.error(
           `Error fetching conversation between ${senderId} and ${recipientId}:`,

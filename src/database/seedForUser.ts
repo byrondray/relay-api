@@ -28,7 +28,8 @@ const parentImageUrls = [
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5OnHV8GHqPs9FClVXQRrhSsDh_KUv8r0HLg&s",
   "https://media.istockphoto.com/id/1410538853/photo/young-man-in-the-public-park.jpg?s=612x612&w=0&k=20&c=EtRJGnNOFPJ2HniBSLWKzsL9Xf7GHinHd5y2Tx3da0E=",
   "https://thispersondoesnotexist.com/",
-  "https://thispersondoesnotexist.com/",
+  "https://img.freepik.com/free-photo/portrait-white-man-isolated_53876-40306.jpg",
+  "https://www.shutterstock.com/image-photo/men-latin-american-hispanic-ethnicity-260nw-282626387.jpg",
 ];
 
 const addressesInVancouver = [
@@ -237,7 +238,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   // Step 4: Add additional users and their children, all assigned to the Edmonds group and school
   const userIds: string[] = [currentUserId];
   const childIds: string[] = [...currentUserChildIds];
-  for (let i = 0; i < 4; i++) {
+  parentImageUrls.map(async () => {
     const userId = uuid();
     console.log(`Creating user with ID: ${userId}`);
     await db.insert(users).values({
@@ -275,7 +276,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       });
       childIds.push(childId);
     }
-  }
+  });
 
   const friendIds = [];
   userIds.map(async (userId) => {

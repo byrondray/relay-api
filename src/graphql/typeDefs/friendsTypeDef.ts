@@ -31,7 +31,7 @@ export const friendsTypeDefs = gql`
   }
 
   type Mutation {
-    addFriend(friendId: String!): Friend!
+    addFriend(friendId: String!): FriendResponse!
     deleteFriend(friendId: String!): FriendResponse!
   }
 `;

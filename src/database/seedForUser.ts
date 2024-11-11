@@ -30,6 +30,13 @@ const parentImageUrls = [
   "https://thispersondoesnotexist.com/",
   "https://img.freepik.com/free-photo/portrait-white-man-isolated_53876-40306.jpg",
   "https://www.shutterstock.com/image-photo/men-latin-american-hispanic-ethnicity-260nw-282626387.jpg",
+  "https://imgcdn.stablediffusionweb.com/2024/9/23/a038a2d5-0060-4294-a2b7-c1df6a6abcfb.jpg",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZmFjZXxlbnwwfHwwfHx8MA%3D%3D",
+  "https://images.unsplash.com/photo-1521146764736-56c929d59c83?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1504199367641-aba8151af406?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://drjosebarrera.com/wp-content/uploads/2021/12/jurica-koletic-7YVZYZeITc8-unsplash.jpg",
+  "https://thispersondoesnotexist.com/",
 ];
 
 const addressesInVancouver = [

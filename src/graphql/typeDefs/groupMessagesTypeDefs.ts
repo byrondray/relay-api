@@ -4,7 +4,6 @@ export const groupMessageTypeDefs = gql`
   type GroupMessage {
     id: ID!
     groupId: String!
-    userId: String!
     message: String!
     createdAt: String!
     sender: User!

@@ -41,7 +41,6 @@ export const groupMessageResolvers = {
       return result.map((record) => ({
         id: record.messageId,
         groupId: record.groupId,
-        userId: record.userId,
         message: record.message,
         createdAt: record.createdAt,
         sender: {
@@ -81,26 +80,17 @@ export const groupMessageResolvers = {
             firstName: users.firstName,
             lastName: users.lastName,
             imageUrl: users.imageUrl,
-            email: users.email,
-            city: users.city,
           })
           .from(users)
           .where(eq(users.id, currentUser.uid));
 
         const messageWithSender = {
           ...groupMessageData,
-          sender,
+          sender: sender[0],
         };
 
-        const groupMembers = await db
-          .select()
-          .from(usersToGroups)
-          .where(eq(usersToGroups.groupId, groupId));
-
-        groupMembers.forEach((member) => {
-          pubsub.publish(`GROUP_MESSAGE_SENT_${member.userId}`, {
-            groupMessageSent: messageWithSender,
-          });
+        pubsub.publish(`GROUP_MESSAGE_SENT_${groupId}`, {
+          groupMessageSent: messageWithSender,
         });
 
         return messageWithSender;
@@ -113,16 +103,9 @@ export const groupMessageResolvers = {
   Subscription: {
     groupMessageSent: {
       subscribe: async (_: any, { groupId }: { groupId: string }) => {
-        const groupMembers = await db
-          .select()
-          .from(usersToGroups)
-          .where(eq(usersToGroups.groupId, groupId));
+        console.log("Subscribing to group messages for group:", groupId);
 
-        const asyncIterators = groupMembers.map((member) =>
-          pubsub.asyncIterator(`GROUP_MESSAGE_SENT_${member.userId}`)
-        );
-
-        return asyncIterators;
+        return pubsub.asyncIterator(`GROUP_MESSAGE_SENT_${groupId}`);
       },
       resolve: (payload: { groupMessageSent: any }) => {
         if (!payload.groupMessageSent) {

@@ -196,7 +196,6 @@ export type GroupMessage = {
   id: Scalars['ID']['output'];
   message: Scalars['String']['output'];
   sender: User;
-  userId: Scalars['String']['output'];
 };
 
 export type LocationData = {

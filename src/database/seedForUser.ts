@@ -27,7 +27,6 @@ const parentImageUrls = [
   "https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ=",
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5OnHV8GHqPs9FClVXQRrhSsDh_KUv8r0HLg&s",
   "https://media.istockphoto.com/id/1410538853/photo/young-man-in-the-public-park.jpg?s=612x612&w=0&k=20&c=EtRJGnNOFPJ2HniBSLWKzsL9Xf7GHinHd5y2Tx3da0E=",
-  "https://thispersondoesnotexist.com/",
   "https://img.freepik.com/free-photo/portrait-white-man-isolated_53876-40306.jpg",
   "https://www.shutterstock.com/image-photo/men-latin-american-hispanic-ethnicity-260nw-282626387.jpg",
   "https://imgcdn.stablediffusionweb.com/2024/9/23/a038a2d5-0060-4294-a2b7-c1df6a6abcfb.jpg",
@@ -36,7 +35,6 @@ const parentImageUrls = [
   "https://images.unsplash.com/photo-1504199367641-aba8151af406?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   "https://drjosebarrera.com/wp-content/uploads/2021/12/jurica-koletic-7YVZYZeITc8-unsplash.jpg",
-  "https://thispersondoesnotexist.com/",
 ];
 
 const addressesInVancouver = [
@@ -151,7 +149,8 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   }> = {};
 
   if (!currentUser.imageUrl) {
-    updatedFields.imageUrl = "https://thispersondoesnotexist.com/";
+    updatedFields.imageUrl =
+      "https://t3.ftcdn.net/jpg/02/22/85/16/360_F_222851624_jfoMGbJxwRi5AWGdPgXKSABMnzCQo9RN.jpg";
   }
   if (!currentUser.lastName) {
     updatedFields.lastName = faker.person.lastName();
@@ -245,7 +244,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   // Step 4: Add additional users and their children, all assigned to the Edmonds group and school
   const userIds: string[] = [currentUserId];
   const childIds: string[] = [...currentUserChildIds];
-  parentImageUrls.map(async () => {
+  parentImageUrls.map(async (image) => {
     const userId = uuid();
     console.log(`Creating user with ID: ${userId}`);
     await db.insert(users).values({
@@ -255,7 +254,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       email: faker.internet.email(),
       phoneNumber: faker.phone.number(),
       city: "Vancouver",
-      imageUrl: "https://thispersondoesnotexist.com/",
+      imageUrl: image.toString(),
       expoPushToken: faker.string.uuid(),
     });
     userIds.push(userId);
@@ -288,9 +287,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   const friendIds = [];
   userIds.map(async (userId) => {
     console.log(`Creating user with ID: ${userId}`);
-    if (userId === currentUserId) {
-      return;
-    }
+    // if (userId !== currentUserId) {
     const friendId = uuid();
     await db.insert(friends).values({
       id: friendId,
@@ -298,6 +295,7 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
       friendId: userId,
     });
     friendIds.push(friendId);
+    // }
   });
 
   console.log("Step 5: Creating requests and linking children");

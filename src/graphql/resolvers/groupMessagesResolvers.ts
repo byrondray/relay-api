@@ -3,10 +3,12 @@ import { getDB } from "../../database/client";
 import { groupMessages } from "../../database/schema/groupMessages";
 import { usersToGroups } from "../../database/schema/usersToGroups";
 import { users } from "../../database/schema/users";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { FirebaseUser } from "./userResolvers";
 import { PubSub } from "graphql-subscriptions";
+import { sendPushNotification } from "../../utils/pushNotification";
+import { groups } from "../../database/schema/groups";
 
 const db = getDB();
 const pubsub = new PubSub();
@@ -92,6 +94,36 @@ export const groupMessageResolvers = {
         pubsub.publish(`GROUP_MESSAGE_SENT_${groupId}`, {
           groupMessageSent: messageWithSender,
         });
+
+        const groupMembers = await db
+          .select({
+            id: users.id,
+            expoPushToken: users.expoPushToken,
+          })
+          .from(users)
+          .innerJoin(usersToGroups, eq(users.id, usersToGroups.userId))
+          .where(
+            and(
+              eq(usersToGroups.groupId, groupId),
+              ne(users.id, currentUser.uid)
+            )
+          );
+
+        const group = await db
+          .select()
+          .from(groups)
+          .where(eq(groups.id, groupId));
+
+        for (const member of groupMembers) {
+          if (member.expoPushToken) {
+            await sendPushNotification(
+              member.expoPushToken,
+              message,
+              currentUser.uid,
+              `${sender[0].firstName} sent a message in ${group[0].name}`
+            );
+          }
+        }
 
         return messageWithSender;
       } else {

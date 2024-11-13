@@ -3,12 +3,13 @@ import fetch from "node-fetch";
 export const sendPushNotification = async (
   expoPushToken: string,
   messageText: string,
-  senderId: string
+  senderId: string,
+  title: string
 ) => {
   const message = {
     to: expoPushToken,
     sound: "default",
-    title: "New Message",
+    title: title,
     body: messageText,
     data: { senderId },
   };

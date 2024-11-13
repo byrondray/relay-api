@@ -111,7 +111,8 @@ export const messageResolvers = {
           await sendPushNotification(
             recipient[0].expoPushToken,
             text,
-            senderId
+            senderId,
+            `New Message from ${sender[0].firstName}`
           );
         } else {
           console.log("No Expo Push Token found for recipient:", recipientId);

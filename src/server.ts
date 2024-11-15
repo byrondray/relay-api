@@ -136,6 +136,7 @@ async function startServer() {
     bodyParser.json(),
     expressMiddleware(server, {
       context: async ({ req, res }): Promise<MyContext> => {
+        console.log("Request headers:", req.headers);
         const authHeader = req.headers.authorization || "";
         const token = authHeader.startsWith("Bearer ")
           ? authHeader.split("Bearer ")[1]
@@ -145,6 +146,7 @@ async function startServer() {
         if (token) {
           try {
             currentUser = await admin.auth().verifyIdToken(token);
+            console.log("Current user:", currentUser);
           } catch (error) {
             console.error("Error verifying token:", error);
           }

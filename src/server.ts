@@ -131,6 +131,11 @@ async function startServer() {
 
   await server.start();
 
+  app.use("/", (req, res, next) => {
+    console.log(req, "req");
+    next();
+  });
+
   app.use(
     "/graphql",
     bodyParser.json(),

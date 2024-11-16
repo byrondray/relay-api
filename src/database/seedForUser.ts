@@ -11,6 +11,10 @@ import { schools } from "./schema/schools";
 import { childToRequest } from "./schema/requestToChildren";
 import { eq } from "drizzle-orm";
 import { friends } from "./schema/friends";
+import {
+  createCarpoolForOtherParent,
+  createCarpoolsForUser,
+} from "./seedCarpoolForUser";
 
 const getRandomVancouverLatLon = () => {
   const lat = faker.number.float({ min: 49.2, max: 49.3 });
@@ -37,7 +41,7 @@ const parentImageUrls = [
   "https://drjosebarrera.com/wp-content/uploads/2021/12/jurica-koletic-7YVZYZeITc8-unsplash.jpg",
 ];
 
-const addressesInVancouver = [
+export const addressesInVancouver = [
   {
     address: "5897 Keith Street, Burnaby, BC, Canada",
     lat: 49.2076328,
@@ -341,6 +345,28 @@ const seedCarpoolRequestsWithNewGroup = async (currentUserId: string) => {
   console.log("Seeding complete.");
 };
 
-seedCarpoolRequestsWithNewGroup("hkdSMSsaZIg4tJE8q4fC8ejp1hO2")
-  .then(() => console.log("Seeding complete"))
-  .catch((error) => console.error("Seeding failed:", error));
+const runSeedForUser = async (currentUserId: string) => {
+  try {
+    console.log("Starting the seeding process...");
+
+    // Step 1: Seed initial data (groups, users, vehicles, children)
+    await seedCarpoolRequestsWithNewGroup(currentUserId);
+    console.log("Seeded initial data for the current user.");
+
+    // Step 2: Create carpools for the current user
+    await createCarpoolsForUser(currentUserId);
+    console.log("Created carpools for the current user.");
+
+    // Step 3: Create a carpool for another parent with the current user as a request
+    await createCarpoolForOtherParent(currentUserId);
+    console.log(
+      "Created a carpool for another parent with the current user as a request."
+    );
+
+    console.log("Seeding process complete.");
+  } catch (error) {
+    console.error("Error during seeding process:", error);
+  }
+};
+
+runSeedForUser("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");

@@ -68,6 +68,19 @@ export type CarpoolWithCarpoolers = {
   vehicleId: Scalars['String']['output'];
 };
 
+export type CarpoolWithRequests = {
+  __typename?: 'CarpoolWithRequests';
+  departureDate: Scalars['String']['output'];
+  departureTime: Scalars['String']['output'];
+  driverId: Scalars['String']['output'];
+  endAddress: Scalars['String']['output'];
+  groupId: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  requests?: Maybe<Array<RequestWithParentAndChild>>;
+  startAddress: Scalars['String']['output'];
+  vehicleId: Scalars['String']['output'];
+};
+
 export type Child = {
   __typename?: 'Child';
   createdAt: Scalars['String']['output'];
@@ -357,6 +370,7 @@ export type MutationUpdateUserInfoArgs = {
 export type Query = {
   __typename?: 'Query';
   filterSchoolsByName: Array<School>;
+  getCarpoolWithRequests: CarpoolWithRequests;
   getCarpoolersByGroupWithoutApprovedRequests?: Maybe<Array<RequestWithChildrenAndParent>>;
   getCarpoolsByGroup?: Maybe<Array<Carpool>>;
   getCarpoolsByGroupsWithApprovedCarpoolers?: Maybe<Array<CarpoolWithCarpoolers>>;
@@ -375,6 +389,7 @@ export type Query = {
   getPastCarpools?: Maybe<Array<Carpool>>;
   getPrivateMessageConversation: Array<DetailedMessage>;
   getUser?: Maybe<User>;
+  getUserCarpoolsAndRequests: UserCarpoolsAndRequests;
   getUsers: Array<User>;
   getVehicle?: Maybe<Vehicle>;
   getVehicleForUser: Array<Vehicle>;
@@ -384,6 +399,11 @@ export type Query = {
 
 export type QueryFilterSchoolsByNameArgs = {
   name: Scalars['String']['input'];
+};
+
+
+export type QueryGetCarpoolWithRequestsArgs = {
+  carpoolId: Scalars['String']['input'];
 };
 
 
@@ -462,6 +482,11 @@ export type QueryGetUserArgs = {
 };
 
 
+export type QueryGetUserCarpoolsAndRequestsArgs = {
+  userId: Scalars['String']['input'];
+};
+
+
 export type QueryGetVehicleArgs = {
   id: Scalars['ID']['input'];
 };
@@ -505,6 +530,16 @@ export type RequestWithChildrenAndParent = {
   startAddress: Scalars['String']['output'];
   startingLat: Scalars['String']['output'];
   startingLon: Scalars['String']['output'];
+};
+
+export type RequestWithParentAndChild = {
+  __typename?: 'RequestWithParentAndChild';
+  carpoolId?: Maybe<Scalars['String']['output']>;
+  child: Child;
+  id: Scalars['String']['output'];
+  parent: User;
+  pickupTime: Scalars['String']['output'];
+  startAddress: Scalars['String']['output'];
 };
 
 export type School = {
@@ -551,6 +586,12 @@ export type User = {
   lastName?: Maybe<Scalars['String']['output']>;
   licenseImageUrl?: Maybe<Scalars['String']['output']>;
   phoneNumber?: Maybe<Scalars['String']['output']>;
+};
+
+export type UserCarpoolsAndRequests = {
+  __typename?: 'UserCarpoolsAndRequests';
+  carpools: Array<Carpool>;
+  requests: Array<RequestWithParentAndChild>;
 };
 
 export type Vehicle = {

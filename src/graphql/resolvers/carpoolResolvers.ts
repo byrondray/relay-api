@@ -217,6 +217,121 @@ export const carpoolResolvers = {
       console.log(res[0].children[0], "result");
       return res;
     },
+
+    getCarpoolWithRequests: async (
+      _: any,
+      { carpoolId }: { carpoolId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      console.log(carpoolId, "carpoolId");
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const carpool = await db
+        .select()
+        .from(carpools)
+        .where(eq(carpools.id, carpoolId))
+        .limit(1);
+
+      if (!carpool.length) {
+        throw new ApolloError("Carpool not found");
+      }
+
+      const requestsWithDetails = await db
+        .select({
+          requestId: requests.id,
+          parentId: requests.parentId,
+          parentName: users.firstName,
+          parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
+          childId: children.id,
+          childFirstName: children.firstName,
+          childImageUrl: children.imageUrl,
+          childSchoolId: children.schoolId,
+        })
+        .from(requests)
+        .innerJoin(users, eq(requests.parentId, users.id))
+        .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .where(eq(requests.carpoolId, carpoolId));
+
+      return {
+        ...carpool[0],
+        requests: requestsWithDetails.map((request) => ({
+          id: request.requestId,
+          parent: {
+            id: request.parentId,
+            firstName: request.parentName,
+            email: request.parentEmail,
+            imageUrl: request.parentImageUrl,
+          },
+          child: {
+            id: request.childId,
+            firstName: request.childFirstName,
+            imageUrl: request.childImageUrl,
+            schoolId: request.childSchoolId,
+          },
+        })),
+      };
+    },
+    getUserCarpoolsAndRequests: async (
+      _: any,
+      { userId }: { userId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser || currentUser.uid !== userId) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const carpoolsByDriver = await db
+        .select()
+        .from(carpools)
+        .where(eq(carpools.driverId, userId));
+
+      const requestsWithDetails = await db
+        .select({
+          id: requests.id,
+          carpoolId: requests.carpoolId || null,
+          pickupTime: requests.pickupTime,
+          startAddress: requests.startingAddress,
+          parentId: requests.parentId,
+          parentName: users.firstName,
+          parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
+          childId: children.id,
+          childFirstName: children.firstName,
+          childImageUrl: children.imageUrl,
+          childSchoolId: children.schoolId,
+        })
+        .from(requests)
+        .innerJoin(users, eq(requests.parentId, users.id))
+        .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .where(eq(requests.parentId, userId));
+
+      return {
+        carpools: carpoolsByDriver,
+        requests: requestsWithDetails.map((request) => ({
+          id: request.id,
+          carpoolId: request.carpoolId || null,
+          pickupTime: request.pickupTime,
+          startAddress: request.startAddress,
+          parent: {
+            id: request.parentId,
+            firstName: request.parentName,
+            email: request.parentEmail,
+            imageUrl: request.parentImageUrl,
+          },
+          child: {
+            id: request.childId,
+            firstName: request.childFirstName,
+            schoolId: request.childSchoolId,
+            imageUrl: request.childImageUrl,
+          },
+        })),
+      };
+    },
   },
 
   Mutation: {

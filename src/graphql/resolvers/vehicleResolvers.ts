@@ -14,14 +14,39 @@ export const vehicleResolvers = {
       { id }: { id: string },
       { currentUser }: FirebaseUser
     ) => {
+      console.log(id, "id");
       if (!currentUser) {
         throw new ApolloError("Authentication required");
       }
 
-      const result = await db.select().from(vehicle).where(eq(vehicle.id, id));
+      const result = await db
+        .select({
+          id: vehicle.id,
+          userId: vehicle.userId,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          licensePlate: vehicle.licensePlate,
+          seats: vehicle.numberOfSeats,
+          color: vehicle.color,
+          vehicleImageUrl: vehicle.vehicleImageUrl,
+        })
+        .from(vehicle)
+        .where(eq(vehicle.id, id));
 
       if (result.length > 0) {
-        return result[0];
+        console.log(result, "result");
+        return result.map((v) => ({
+          id: v.id,
+          userId: v.userId,
+          make: v.make,
+          model: v.model,
+          year: v.year,
+          licensePlate: v.licensePlate,
+          seats: v.seats,
+          color: v.color,
+          vehicleImageUrl: v.vehicleImageUrl,
+        }))[0];
       }
 
       return null;

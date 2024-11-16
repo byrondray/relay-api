@@ -112,6 +112,61 @@ export const carpoolTypeDefs = gql`
     pickupTime: String!
   }
 
+  type CarpoolWithRequests {
+    id: String!
+    driverId: String!
+    vehicleId: String!
+    groupId: String!
+    startAddress: String!
+    endAddress: String!
+    departureDate: String!
+    departureTime: String!
+    requests: [RequestWithParentAndChild!]
+  }
+
+  type RequestWithParentAndChild {
+    id: String!
+    parent: User!
+    child: Child!
+  }
+
+  type CarpoolWithRequests {
+    id: String!
+    driverId: String!
+    vehicleId: String!
+    groupId: String!
+    startAddress: String!
+    endAddress: String!
+    departureDate: String!
+    departureTime: String!
+    requests: [RequestWithParentAndChild!]
+  }
+
+  type Carpool {
+    id: String!
+    driverId: String!
+    vehicleId: String!
+    groupId: String!
+    startAddress: String!
+    endAddress: String!
+    departureDate: String!
+    departureTime: String!
+  }
+
+  type RequestWithParentAndChild {
+    id: String!
+    carpoolId: String
+    parent: User!
+    child: Child!
+    pickupTime: String!
+    startAddress: String!
+  }
+
+  type UserCarpoolsAndRequests {
+    carpools: [Carpool!]!
+    requests: [RequestWithParentAndChild!]!
+  }
+
   type Query {
     getCarpoolsByGroup(groupId: String!): [Carpool!]
     getPastCarpools(userId: String!): [Carpool!]
@@ -125,6 +180,8 @@ export const carpoolTypeDefs = gql`
       time: String!
       endingAddress: String!
     ): [RequestWithChildrenAndParent!]
+    getCarpoolWithRequests(carpoolId: String!): CarpoolWithRequests!
+    getUserCarpoolsAndRequests(userId: String!): UserCarpoolsAndRequests!
   }
 
   type CarpoolWithCarpoolers {

@@ -6,6 +6,14 @@ import {
 import { ApolloError } from "apollo-server-errors";
 import { getActiveCarpoolMembers } from "../../services/carpool.service";
 import { FirebaseUser } from "./userResolvers";
+import { getDB } from "../../database/client";
+import { requests } from "../../database/schema/carpoolRequests";
+import { carpools } from "../../database/schema/carpool";
+import { and, eq, gte, ne } from "drizzle-orm";
+import { users } from "../../database/schema/users";
+import { sendPushNotification } from "../../utils/pushNotification";
+
+const db = getDB();
 
 const pubsub = new PubSub();
 
@@ -46,7 +54,21 @@ export const mapDataResolver = {
         throw new ApolloError("Authentication required");
       }
 
-      const activeParticipants = await getActiveCarpoolMembers(carpoolId);
+      const activeParticipants = await db
+        .select({
+          userId: requests.parentId,
+          expoPushToken: users.expoPushToken,
+        })
+        .from(requests)
+        .innerJoin(carpools, eq(requests.carpoolId, carpools.id))
+        .innerJoin(users, eq(requests.parentId, users.id))
+        .where(
+          and(
+            eq(requests.carpoolId, carpoolId),
+            eq(requests.isApproved, 1),
+            ne(requests.parentId, currentUser.uid)
+          )
+        );
 
       if (!activeParticipants || activeParticipants.length === 0) {
         return null;
@@ -59,11 +81,26 @@ export const mapDataResolver = {
         timestamp: new Date().toISOString(),
       };
 
-      activeParticipants.forEach((participant: { userId: string }) => {
+      for (const participant of activeParticipants) {
         pubsub.publish(`LOCATION_SENT_${participant.userId}`, {
           locationReceived: locationData,
         });
-      });
+
+        if (participant.expoPushToken) {
+          const messageText = `New location update from ${currentUser.uid}`;
+          const title = "Location Update";
+          await sendPushNotification(
+            participant.expoPushToken,
+            messageText,
+            currentUser.uid,
+            title
+          );
+        } else {
+          console.warn(
+            `No Expo Push Token available for participant ${participant.userId}`
+          );
+        }
+      }
 
       return locationData;
     },

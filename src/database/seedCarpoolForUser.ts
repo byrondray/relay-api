@@ -10,10 +10,12 @@ import { children } from "./schema/children";
 import { carpools } from "./schema/carpool";
 import { requests } from "./schema/carpoolRequests";
 import { childToRequest } from "./schema/requestToChildren";
-import { addressesInVancouver } from "./seedForUser";
+import { addressesInVancouver, childImageUrls } from "./seedForUser";
+import { schools } from "./schema/schools";
 
 export const createCarpoolsForUser = async (
   currentUserId: string,
+  secondUserId: string,
   groupName = "Edmonds Community School"
 ) => {
   const db = getDB();
@@ -81,9 +83,40 @@ export const createCarpoolsForUser = async (
     `Found ${otherChildren.length} children belonging to other parents`
   );
 
-  // Step 5: Create carpools
+  // Step 5: Check for second user's children and add one if missing
+  let secondUserChild = await db
+    .select()
+    .from(children)
+    .where(eq(children.userId, secondUserId))
+    .limit(1);
+
+  const edmondsSchool = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.name, "Edmonds Community School"))
+    .limit(1);
+
+  if (!secondUserChild.length) {
+    const newChildId = uuid();
+    const childName = faker.person.firstName();
+    const newChild = {
+      id: newChildId,
+      userId: secondUserId,
+      firstName: childName,
+      imageUrl: faker.helpers.arrayElement(childImageUrls),
+      schoolId: edmondsSchool[0].id,
+      createdAt: new Date().toISOString(),
+      schoolEmailAddress: null,
+    };
+
+    await db.insert(children).values(newChild);
+    console.log(`Added a new child for user ID: ${secondUserId}`);
+    secondUserChild = [newChild];
+  }
+
+  // Step 6: Create carpools
   const carpoolIds: string[] = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     const startAddress = faker.helpers.arrayElement(addressesInVancouver);
     const endAddress = faker.helpers.arrayElement(addressesInVancouver);
 
@@ -118,17 +151,52 @@ export const createCarpoolsForUser = async (
     console.log(`Created carpool with ID: ${id}`);
   }
 
-  // Step 6: Create requests for each carpool
+  // Step 7: Create requests for each carpool
   for (const carpoolId of carpoolIds) {
     let seatsUsed = 0; // Track seats used for the current carpool
 
+    // Add the second user's child first
+    if (seatsUsed < maxSeats) {
+      const secondUserRequestId = uuid();
+      const secondUserChildData = secondUserChild[0];
+      const startAddress = faker.helpers.arrayElement(addressesInVancouver);
+      const endAddress = faker.helpers.arrayElement(addressesInVancouver);
+
+      await db.insert(requests).values({
+        id: secondUserRequestId,
+        groupId: groupId,
+        parentId: secondUserId,
+        carpoolId: carpoolId,
+        isApproved: faker.number.int({ min: 0, max: 1 }),
+        startingAddress: startAddress.address,
+        endingAddress: endAddress.address,
+        startingLatitude: startAddress.lat.toString(),
+        startingLongitude: startAddress.lon.toString(),
+        endingLatitude: endAddress.lat.toString(),
+        endingLongitude: endAddress.lon.toString(),
+        pickupTime: faker.date.future().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
+
+      await db.insert(childToRequest).values({
+        id: uuid(),
+        childId: secondUserChildData.id,
+        requestId: secondUserRequestId,
+      });
+
+      seatsUsed += 1;
+      console.log(
+        `Created request for second user with ID: ${secondUserRequestId}`
+      );
+    }
+
+    // Add other parents' children
     for (let i = 0; i < 3 && seatsUsed < maxSeats; i++) {
       const parent = faker.helpers.arrayElement(otherParents);
       const child = faker.helpers.arrayElement(
         otherChildren.filter((child) => child.userId === parent.users.id)
       );
 
-      // Check if adding this child would exceed the max seats
       if (seatsUsed + 1 > maxSeats) {
         console.log(
           `Skipping request for child ID: ${child.id}, no available seats`
@@ -140,16 +208,14 @@ export const createCarpoolsForUser = async (
       const startAddress = faker.helpers.arrayElement(addressesInVancouver);
       const endAddress = faker.helpers.arrayElement(addressesInVancouver);
 
-      // Insert request
       await db.insert(requests).values({
         id: requestId,
         groupId: groupId,
         parentId: parent.users.id,
         carpoolId: carpoolId,
         isApproved: faker.number.int({ min: 0, max: 1 }),
-        startingAddress:
-          faker.helpers.arrayElement(addressesInVancouver).address,
-        endingAddress: faker.helpers.arrayElement(addressesInVancouver).address,
+        startingAddress: startAddress.address,
+        endingAddress: endAddress.address,
         startingLatitude: startAddress.lat.toString(),
         startingLongitude: startAddress.lon.toString(),
         endingLatitude: endAddress.lat.toString(),
@@ -158,14 +224,13 @@ export const createCarpoolsForUser = async (
         createdAt: new Date().toISOString(),
       });
 
-      // Link child to request
       await db.insert(childToRequest).values({
         id: uuid(),
         childId: child.id,
         requestId: requestId,
       });
 
-      seatsUsed += 1; // Increment seats used
+      seatsUsed += 1;
       console.log(
         `Created request with ID: ${requestId} and linked child ID: ${child.id}`
       );
@@ -180,11 +245,12 @@ export const createCarpoolsForUser = async (
 
 export const createCarpoolForOtherParent = async (
   currentUserId: string,
+  secondUserId: string,
   groupName = "Edmonds Community School"
 ) => {
   const db = getDB();
   console.log(
-    `Creating a carpool for another parent where user: ${currentUserId} is the only request in group: ${groupName}`
+    `Creating a carpool for user: ${secondUserId} where user: ${currentUserId} is a request in group: ${groupName}`
   );
 
   // Step 1: Get the group
@@ -199,70 +265,40 @@ export const createCarpoolForOtherParent = async (
   }
   const groupId = group.id;
 
-  // Step 2: Query other parents in the group
-  const otherParents = await db
+  // Step 2: Find or create a vehicle for the second user
+  let [secondUserVehicle] = await db
     .select()
-    .from(users)
-    .innerJoin(usersToGroups, eq(users.id, usersToGroups.userId))
-    .where(
-      and(eq(usersToGroups.groupId, groupId), ne(users.id, currentUserId))
+    .from(vehicle)
+    .where(eq(vehicle.userId, secondUserId))
+    .limit(1);
+
+  if (!secondUserVehicle) {
+    const vehicleId = uuid();
+    await db.insert(vehicle).values({
+      id: vehicleId,
+      userId: secondUserId,
+      make: faker.vehicle.manufacturer(),
+      model: faker.vehicle.model(),
+      year: faker.date.past().getFullYear().toString(),
+      licensePlate: faker.vehicle.vrm(),
+      color: faker.color.human(),
+      numberOfSeats: faker.number.int({ min: 4, max: 6 }),
+    });
+    console.log(
+      `Created vehicle with ID: ${vehicleId} for user ID: ${secondUserId}`
     );
 
-  if (otherParents.length === 0) {
-    throw new Error(`No other parents found in group "${groupName}"`);
-  }
-  console.log(`Found ${otherParents.length} other parents in the group`);
-
-  // Step 3: Find or create a parent with a vehicle
-  let parentWithVehicle = null;
-  for (const parent of otherParents) {
-    let [parentVehicle] = await db
+    // Retrieve the newly created vehicle
+    [secondUserVehicle] = await db
       .select()
       .from(vehicle)
-      .where(eq(vehicle.userId, parent.users.id))
+      .where(eq(vehicle.id, vehicleId))
       .limit(1);
-
-    // If the parent doesn't have a vehicle, create one
-    if (!parentVehicle) {
-      const vehicleId = uuid();
-      await db.insert(vehicle).values({
-        id: vehicleId,
-        userId: parent.users.id,
-        make: faker.vehicle.manufacturer(),
-        model: faker.vehicle.model(),
-        year: faker.date.past().getFullYear().toString(),
-        licensePlate: faker.vehicle.vrm(),
-        color: faker.color.human(),
-        numberOfSeats: faker.number.int({ min: 4, max: 6 }),
-      });
-      console.log(
-        `Created vehicle with ID: ${vehicleId} for parent ID: ${parent.users.id}`
-      );
-
-      // Retrieve the newly created vehicle
-      [parentVehicle] = await db
-        .select()
-        .from(vehicle)
-        .where(eq(vehicle.id, vehicleId))
-        .limit(1);
-    }
-
-    if (parentVehicle) {
-      parentWithVehicle = { parent, vehicle: parentVehicle };
-      break;
-    }
   }
 
-  if (!parentWithVehicle) {
-    throw new Error(
-      `No available vehicles found or created for parents in group "${groupName}"`
-    );
-  }
+  const maxSeats = secondUserVehicle.numberOfSeats;
 
-  const { parent, vehicle: parentVehicle } = parentWithVehicle;
-  console.log(`Using vehicle with ID: ${parentVehicle.id} for the carpool`);
-
-  // Step 4: Query children of the current user
+  // Step 3: Query children of the current user
   const currentUserChildren = await db
     .select()
     .from(children)
@@ -276,15 +312,47 @@ export const createCarpoolForOtherParent = async (
     `Found ${currentUserChildren.length} children for the current user`
   );
 
-  // Step 5: Create a carpool for the other parent
+  // Step 4: Query children of the second user
+  let secondUserChildren = await db
+    .select()
+    .from(children)
+    .where(eq(children.userId, secondUserId))
+    .limit(5);
+
+  const edmondsSchool = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.name, "Edmonds Community School"))
+    .limit(1);
+
+  if (secondUserChildren.length === 0) {
+    // Create a default child if the second user has no children
+    const newChildId = uuid();
+    const childName = faker.person.firstName();
+    const newChild = {
+      id: newChildId,
+      userId: secondUserId,
+      firstName: childName,
+      imageUrl: faker.helpers.arrayElement(childImageUrls),
+      schoolId: edmondsSchool[0].id,
+      createdAt: new Date().toISOString(),
+      schoolEmailAddress: null,
+    };
+
+    await db.insert(children).values(newChild);
+    console.log(`Added a new child for user ID: ${secondUserId}`);
+    secondUserChildren = [newChild];
+  }
+
+  // Step 5: Create a carpool for the second user
   const startAddress = faker.helpers.arrayElement(addressesInVancouver);
   const endAddress = faker.helpers.arrayElement(addressesInVancouver);
   const carpoolId = uuid();
 
   await db.insert(carpools).values({
     id: carpoolId,
-    driverId: parent.users.id,
-    vehicleId: parentVehicle.id,
+    driverId: secondUserId,
+    vehicleId: secondUserVehicle.id,
     groupId: groupId,
     startAddress: startAddress.address,
     endAddress: endAddress.address,
@@ -307,14 +375,14 @@ export const createCarpoolForOtherParent = async (
     createdAt: new Date().toISOString(),
   });
   console.log(
-    `Created carpool with ID: ${carpoolId} for parent ID: ${parent.users.id}`
+    `Created carpool with ID: ${carpoolId} for user ID: ${secondUserId}`
   );
 
-  // Step 6: Create a request for the current user and link their children
-  const requestId = uuid();
+  // Step 6: Add the current user as a request
+  const currentUserRequestId = uuid();
 
   await db.insert(requests).values({
-    id: requestId,
+    id: currentUserRequestId,
     groupId: groupId,
     parentId: currentUserId,
     carpoolId: carpoolId,
@@ -329,18 +397,20 @@ export const createCarpoolForOtherParent = async (
     createdAt: new Date().toISOString(),
   });
   console.log(
-    `Created request with ID: ${requestId} for carpool ID: ${carpoolId}`
+    `Created request for current user with ID: ${currentUserRequestId}`
   );
 
-  // Step 7: Link current user's children to the request
+  // Link the current user's children to the request
   for (const child of currentUserChildren) {
     await db.insert(childToRequest).values({
       id: uuid(),
       childId: child.id,
-      requestId: requestId,
+      requestId: currentUserRequestId,
     });
-    console.log(`Linked child ID: ${child.id} to request ID: ${requestId}`);
+    console.log(
+      `Linked child ID: ${child.id} to request ID: ${currentUserRequestId}`
+    );
   }
 
-  console.log("Carpool creation for another parent complete.");
+  console.log("Carpool creation complete.");
 };

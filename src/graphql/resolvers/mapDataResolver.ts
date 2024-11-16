@@ -112,7 +112,7 @@ export const mapDataResolver = {
         if (!recipientId) {
           throw new ApolloError("Recipient ID must be provided.");
         }
-
+        console.log("Subscribing to location updates for user:", recipientId);
         return pubsub.asyncIterator(`LOCATION_SENT_${recipientId}`);
       },
       resolve: (payload: {
@@ -123,6 +123,7 @@ export const mapDataResolver = {
           timestamp: string;
         };
       }) => {
+        console.log("Payload:", payload);
         return payload.locationReceived;
       },
     },

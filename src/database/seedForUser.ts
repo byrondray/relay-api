@@ -22,7 +22,7 @@ const getRandomVancouverLatLon = () => {
   return { lat, lon };
 };
 
-const childImageUrls = [
+export const childImageUrls = [
   "https://media.istockphoto.com/id/1387226163/photo/portrait-of-a-little-boy-with-a-plaster-on-his-arm-after-an-injection.jpg?s=612x612&w=0&k=20&c=3dlo_ztuREvJWLNbdqlgGcztceBgk5qDdU7ulYaErkk=",
   "https://img.freepik.com/free-photo/smiley-little-girl-red-dress_23-2148984788.jpg",
 ];
@@ -354,11 +354,19 @@ const runSeedForUser = async (currentUserId: string) => {
     console.log("Seeded initial data for the current user.");
 
     // Step 2: Create carpools for the current user
-    await createCarpoolsForUser(currentUserId);
+    await createCarpoolsForUser(
+      currentUserId,
+      "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+      "Edmonds Community School"
+    );
     console.log("Created carpools for the current user.");
 
     // Step 3: Create a carpool for another parent with the current user as a request
-    await createCarpoolForOtherParent(currentUserId);
+    await createCarpoolForOtherParent(
+      currentUserId,
+      "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+      "Edmonds Community School"
+    );
     console.log(
       "Created a carpool for another parent with the current user as a request."
     );

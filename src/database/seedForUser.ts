@@ -27,7 +27,7 @@ export const childImageUrls = [
   "https://img.freepik.com/free-photo/smiley-little-girl-red-dress_23-2148984788.jpg",
 ];
 
-const parentImageUrls = [
+export const parentImageUrls = [
   "https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ=",
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5OnHV8GHqPs9FClVXQRrhSsDh_KUv8r0HLg&s",
   "https://media.istockphoto.com/id/1410538853/photo/young-man-in-the-public-park.jpg?s=612x612&w=0&k=20&c=EtRJGnNOFPJ2HniBSLWKzsL9Xf7GHinHd5y2Tx3da0E=",

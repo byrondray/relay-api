@@ -23,6 +23,12 @@ const mapDataTypeDefs = gql`
     lon: Float!
     senderId: String!
     timestamp: String!
+    nextStop: NextStop
+  }
+
+  type NextStop {
+    address: String!
+    requestId: String!
   }
 
   type Query {
@@ -31,7 +37,33 @@ const mapDataTypeDefs = gql`
   }
 
   type Mutation {
-    sendLocation(carpoolId: String!, lat: Float!, lon: Float!): LocationData
+    sendLocation(
+      carpoolId: String!
+      lat: Float!
+      lon: Float!
+      nextStop: NextStopInput!
+      timeToNextStop: String!
+      totalTime: String!
+      timeUntilNextStop: String!
+      isLeaving: Boolean!
+      isFinalDestination: Boolean!
+    ): LocationData
+  }
+
+  input NextStopInput {
+    address: String!
+    requestId: String!
+  }
+
+  type Subscription {
+    locationReceived(recipientId: String!): LocationData
+    foregroundNotification(recipientId: String!): ForegroundNotification
+  }
+
+  type ForegroundNotification {
+    message: String!
+    timestamp: String!
+    senderId: String!
   }
 
   type Subscription {

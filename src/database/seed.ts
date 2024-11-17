@@ -1,210 +1,358 @@
 import { getDB } from "./client";
-import { users } from "./schema/users";
-import { messages } from "./schema/messages";
-import { schools } from "./schema/schools";
-import { communityCenters } from "./schema/communityCenters";
+import { users as userSchema } from "./schema/users";
 import { children } from "./schema/children";
-import { groups } from "./schema/groups";
-import { usersToGroups } from "./schema/usersToGroups";
-import { carpools } from "./schema/carpool";
-import { requests } from "./schema/carpoolRequests";
 import { vehicle } from "./schema/vehicle";
 import { faker } from "@faker-js/faker";
 import { v4 as uuid } from "uuid";
-import { schoolsArray } from "./schoolSeedData";
-import { commCenterData } from "./commCenterData";
+import { friends } from "./schema/friends";
+import { eq, inArray, ne } from "drizzle-orm";
+import { addressesInVancouver, childImageUrls } from "./seedForUser";
+import { parentImageUrls } from "./seedForUser";
+import { schools } from "./schema/schools";
+import { carpools } from "./schema/carpool";
+import { requests } from "./schema/carpoolRequests";
 import { childToRequest } from "./schema/requestToChildren";
+import { groups } from "./schema/groups";
+import { usersToGroups } from "./schema/usersToGroups";
 
-const db = getDB();
+export const ensureUserCompleteness = async (
+  userId: string,
+  name?: string,
+  email?: string
+) => {
+  const db = getDB();
 
-const getRandomVancouverLatLon = () => {
-  const lat = faker.number.float({ min: 49.0, max: 49.4 });
-  const lon = faker.number.float({ min: -123.3, max: -123.0 });
-  return { lat, lon };
-};
+  // Step 1: Fetch the user
+  let [user] = await db
+    .select()
+    .from(userSchema)
+    .where(eq(userSchema.id, userId))
+    .limit(1);
 
-const seedDatabase = async () => {
-  const schoolIds = [];
-  const userIds = [];
-  const groupIds = [];
-  const vehicleIds = [];
-  const carpoolIds = [];
-  const communityCenterIds = [];
-  const childIds = [];
-
-  await db.delete(messages);
-  await db.delete(users);
-  await db.delete(children);
-  await db.delete(groups);
-  await db.delete(usersToGroups);
-  await db.delete(carpools);
-  await db.delete(requests);
-
-  for (const school of schoolsArray) {
-    const result = await db
-      .insert(schools)
-      .values({
-        id: uuid(),
-        districtNumber: school["District Number"],
-        name: school["Display Name"],
-        address: school.Address,
-        city: school.City,
-      })
-      .returning();
-    schoolIds.push(result[0].id);
+  // Step 2: Create user if not found
+  if (!user) {
+    console.log(`User with ID ${userId} does not exist. Creating a new user.`);
+    const newUser = {
+      id: userId,
+      firstName: name || "Howie",
+      lastName: faker.person.lastName(),
+      email: email || "howie@gmail.com",
+      phoneNumber: faker.phone.number(),
+      city: faker.location.city(),
+      imageUrl: faker.helpers.arrayElement(parentImageUrls),
+      expoPushToken: faker.string.uuid(),
+      createdAt: new Date().toISOString(),
+      insuranceImageUrl: null,
+      licenseImageUrl: null,
+    };
+    await db.insert(userSchema).values(newUser);
+    user = newUser;
+    console.log(`Created user with ID: ${userId}`);
   }
 
-  for (const center of commCenterData) {
-    const result = await db
-      .insert(communityCenters)
-      .values({
-        id: center.id,
-        name: center.name,
-        address: center.address,
-        lat: center.lat,
-        lon: center.lon,
-      })
-      .returning();
-    communityCenterIds.push(result[0].id);
+  // Step 3: Fill out missing user fields
+  const updatedFields: Partial<typeof userSchema.$inferInsert> = {};
+
+  if (!user.imageUrl) {
+    updatedFields.imageUrl = faker.helpers.arrayElement(parentImageUrls);
+  }
+  if (!user.lastName) {
+    updatedFields.lastName = faker.person.lastName();
+  }
+  if (!user.firstName) {
+    updatedFields.firstName = "Howie";
+  }
+  if (!user.email) {
+    updatedFields.email = "howie@gmail.com";
   }
 
-  for (let i = 0; i < 10; i++) {
-    const user = await db
-      .insert(users)
-      .values({
-        id: uuid(),
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
-        email: faker.internet.email(),
-        phoneNumber: faker.phone.number(),
-        city: "Vancouver",
-        expoPushToken: faker.string.uuid(),
-      })
-      .returning();
-    userIds.push(user[0].id);
+  if (Object.keys(updatedFields).length > 0) {
+    await db
+      .update(userSchema)
+      .set(updatedFields)
+      .where(eq(userSchema.id, userId));
+    console.log(`Updated missing fields for user ID: ${userId}`);
   }
 
-  for (let i = 0; i < 5; i++) {
-    const result = await db
-      .insert(vehicle)
-      .values({
-        id: uuid(),
-        userId: faker.helpers.arrayElement(userIds),
+  // Step 4: Ensure the user has vehicles
+  const existingVehicles = await db
+    .select()
+    .from(vehicle)
+    .where(eq(vehicle.userId, userId));
+
+  if (existingVehicles.length === 0) {
+    for (let i = 0; i < 2; i++) {
+      const vehicleId = uuid();
+      await db.insert(vehicle).values({
+        id: vehicleId,
+        userId: userId,
         make: faker.vehicle.manufacturer(),
         model: faker.vehicle.model(),
-        year: faker.vehicle.vin(),
+        year: faker.date.past().getFullYear().toString(),
         licensePlate: faker.vehicle.vrm(),
         color: faker.color.human(),
-        numberOfSeats: faker.number.int({ min: 2, max: 7 }),
-      })
-      .returning();
-    vehicleIds.push(result[0].id);
+        numberOfSeats: faker.number.int({ min: 4, max: 6 }),
+      });
+      console.log(
+        `Created vehicle with ID: ${vehicleId} for user ID: ${userId}`
+      );
+    }
   }
 
-  for (let i = 0; i < 5; i++) {
-    const group = await db
-      .insert(groups)
-      .values({
-        id: uuid(),
-        name: faker.lorem.words(2),
-      })
-      .returning();
-    groupIds.push(group[0].id);
-  }
+  const [edmondsGroup] = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.name, "Edmonds Community School"))
+    .limit(1);
 
-  for (let i = 0; i < 20; i++) {
+  const userInEdmondsGroup = await db
+    .select()
+    .from(groups)
+    .innerJoin(usersToGroups, eq(usersToGroups.userId, userId))
+    .where(eq(groups.id, edmondsGroup.id))
+    .limit(1);
+
+  if (userInEdmondsGroup.length === 0) {
     await db.insert(usersToGroups).values({
       id: uuid(),
-      userId: faker.helpers.arrayElement(userIds),
-      groupId: faker.helpers.arrayElement(groupIds),
+      userId: userId,
+      groupId: edmondsGroup.id,
     });
+    console.log(`Added user ID: ${userId} to Edmonds Community School group`);
   }
 
-  for (let i = 0; i < 10; i++) {
-    const child = await db
-      .insert(children)
-      .values({
-        id: uuid(),
-        userId: faker.helpers.arrayElement(userIds),
+  const [edmondsSchool] = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.name, "Edmonds Community School"))
+    .limit(1);
+
+  // Step 5: Ensure the user has children
+  const existingChildren = await db
+    .select()
+    .from(children)
+    .where(eq(children.userId, userId));
+
+  // If the user has no children, create two
+  if (existingChildren.length === 0) {
+    for (let i = 0; i < 2; i++) {
+      const childId = uuid();
+      await db.insert(children).values({
+        id: childId,
+        userId: userId,
         firstName: faker.person.firstName(),
-        schoolId: faker.helpers.arrayElement(schoolIds),
+        schoolId: edmondsSchool.id,
         schoolEmailAddress: faker.internet.email(),
+        imageUrl: faker.helpers.arrayElement(childImageUrls),
         createdAt: new Date().toISOString(),
-      })
-      .returning();
-    childIds.push(child[0].id);
-  }
-
-  for (let i = 0; i < 5; i++) {
-    const { lat: startLat, lon: startLon } = getRandomVancouverLatLon();
-    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
-
-    const carpool = await db
-      .insert(carpools)
-      .values({
-        id: uuid(),
-        driverId: faker.helpers.arrayElement(userIds),
-        vehicleId: faker.helpers.arrayElement(vehicleIds),
-        groupId: faker.helpers.arrayElement(groupIds),
-        startAddress: faker.location.streetAddress(),
-        endAddress: faker.location.streetAddress(),
-        startLat: startLat,
-        startLon: startLon,
-        endLat: endLat,
-        endLon: endLon,
-        departureDate: faker.date.soon().toISOString().split("T")[0],
-        departureTime: faker.date.recent().toISOString(),
-        extraCarSeat: faker.datatype.boolean() ? 1 : 0,
-        winterTires: faker.datatype.boolean() ? 1 : 0,
-        tripPreferences: faker.lorem.sentence(),
-      })
-      .returning();
-    carpoolIds.push(carpool[0].id);
-  }
-
-  for (let i = 0; i < 10; i++) {
-    const { lat: startLat, lon: startLon } = getRandomVancouverLatLon();
-    const { lat: endLat, lon: endLon } = getRandomVancouverLatLon();
-
-    // Insert request
-    const request = await db
-      .insert(requests)
-      .values({
-        id: uuid(),
-        carpoolId: faker.helpers.arrayElement(carpoolIds),
-        groupId: faker.helpers.arrayElement(groupIds),
-        parentId: faker.helpers.arrayElement(userIds),
-        isApproved: faker.datatype.boolean() ? 1 : 0,
-        startingAddress: faker.location.streetAddress(),
-        endingAddress: faker.location.streetAddress(),
-        startingLatitude: startLat.toString(),
-        startingLongitude: startLon.toString(),
-        endingLatitude: endLat.toString(),
-        endingLongitude: endLon.toString(),
-        pickupTime: faker.date.future().toISOString(),
-        createdAt: new Date().toISOString(),
-      })
-      .returning();
-
-    const requestId = request[0].id;
-
-    const numberOfChildren = faker.number.int({ min: 1, max: 3 });
-    for (let j = 0; j < numberOfChildren; j++) {
-      const childId = faker.helpers.arrayElement(childIds);
-
-      await db.insert(childToRequest).values({
-        id: uuid(),
-        childId: childId,
-        requestId: requestId,
       });
+      console.log(`Created child with ID: ${childId} for user ID: ${userId}`);
     }
+  } else if (existingChildren.length > 2) {
+    // If the user has more than 2 children, delete the excess
+    const childrenToDelete = existingChildren
+      .slice(2) // Keep only the first two children, delete the rest
+      .map((child) => child.id);
 
-    console.log(
-      `Created request for parent: ${request[0].parentId} with ${numberOfChildren} children`
-    );
+    await db.delete(children).where(inArray(children.id, childrenToDelete));
+
+    console.log(`Deleted excess children for user ID: ${userId}`);
   }
 
-  console.log("Seeding complete");
+  // Step 6: Ensure the user has friends
+  const existingFriends = await db
+    .select()
+    .from(friends)
+    .where(eq(friends.userId, userId));
+
+  if (existingFriends.length === 0) {
+    const availableUsers = await db
+      .select()
+      .from(userSchema)
+      .where(ne(userSchema.id, userId))
+      .limit(10);
+
+    if (availableUsers.length === 0) {
+      console.log(
+        `No other users found to create friends for user ID: ${userId}`
+      );
+    } else {
+      for (const friend of availableUsers) {
+        const friendId = uuid();
+        await db.insert(friends).values({
+          id: friendId,
+          userId: userId,
+          friendId: friend.id,
+        });
+        console.log(
+          `Added friend with ID: ${friend.id} for user ID: ${userId}`
+        );
+      }
+    }
+  }
 };
 
-seedDatabase();
+export const createCarpoolWithRequests = async (
+  currentUserId: string,
+  otherUserIds: string[]
+) => {
+  const db = getDB();
+
+  // Step 1: Ensure current user is complete
+  await ensureUserCompleteness(currentUserId);
+
+  // Step 2: Ensure other users are complete
+  for (const userId of otherUserIds) {
+    await ensureUserCompleteness(userId);
+  }
+
+  // Step 3: Create a carpool for the current user
+  const carpoolId = uuid();
+  const [userVehicle] = await db
+    .select()
+    .from(vehicle)
+    .where(eq(vehicle.userId, currentUserId))
+    .limit(1);
+
+  if (!userVehicle) {
+    throw new Error(`No vehicle found for user ID: ${currentUserId}`);
+  }
+
+  const [edmondsSchool] = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.name, "Edmonds Community School"))
+    .limit(1);
+
+  const [group] = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.schoolId, edmondsSchool.id))
+    .limit(1);
+
+  const carpoolData = {
+    id: carpoolId,
+    driverId: currentUserId,
+    vehicleId: userVehicle.id,
+    groupId: group.id,
+    startAddress: "7651 18th Ave, Burnaby",
+    endAddress: "Richmond Olympic Oval",
+    startLat: 49.22248480251348,
+    startLon: -122.94077691451247,
+    endLat: 49.17503320853535,
+    endLon: -123.15171956098669,
+    departureDate: new Date().toISOString(),
+    departureTime: "03: 30 PM",
+    extraCarSeat: 1,
+    winterTires: 0,
+    tripPreferences: "No pets, non-smoking",
+    createdAt: new Date().toISOString(),
+  };
+
+  await db.insert(carpools).values(carpoolData);
+  console.log(`Created carpool with ID: ${carpoolId}`);
+
+  // Step 4: Add requests for each other user
+  for (const userId of otherUserIds) {
+    const requestId = uuid();
+
+    const userChildren = await db
+      .select()
+      .from(children)
+      .where(eq(children.userId, userId));
+
+    if (userChildren.length === 0) {
+      console.warn(`User ID ${userId} has no children, skipping request.`);
+      continue;
+    }
+
+    const addressInVancouver = faker.helpers.arrayElement(addressesInVancouver);
+
+    const requestData = {
+      id: requestId,
+      carpoolId: carpoolId,
+      parentId: userId,
+      groupId: carpoolData.groupId,
+      isApproved: 0,
+      startingAddress: addressInVancouver.address,
+      endingAddress: carpoolData.endAddress,
+      startingLatitude: addressInVancouver.lat.toString(),
+      startingLongitude: addressInVancouver.lon.toString(),
+      endingLatitude: carpoolData.endLat.toString(),
+      endingLongitude: carpoolData.endLon.toString(),
+      pickupTime: "03:30PM", // Example data
+      createdAt: new Date().toISOString(),
+    };
+
+    await db.insert(requests).values(requestData);
+    console.log(`Created request with ID: ${requestId} for user ID: ${userId}`);
+
+    // Link children to the request
+    for (const child of userChildren) {
+      // Check if the child exists in the database
+      const childExists = await db
+        .select()
+        .from(children)
+        .where(eq(children.id, child.id))
+        .limit(1);
+
+      if (childExists.length === 0) {
+        console.warn(`Child ID ${child.id} does not exist, skipping.`);
+        continue;
+      }
+
+      // Check if the request exists in the database
+      const requestExists = await db
+        .select()
+        .from(requests)
+        .where(eq(requests.id, requestId))
+        .limit(1);
+
+      if (requestExists.length === 0) {
+        console.warn(`Request ID ${requestId} does not exist, skipping.`);
+        continue;
+      }
+
+      // Insert into childToRequest
+      const childToRequestData = {
+        id: uuid(),
+        childId: child.id,
+        requestId: requestId,
+      };
+
+      try {
+        await db.insert(childToRequest).values(childToRequestData);
+        console.log(
+          `Linked child ID: ${child.id} to request ID: ${requestId} for user ID: ${userId}`
+        );
+      } catch (error) {
+        console.error(
+          `Failed to link child ID: ${child.id} to request ID: ${requestId}:`,
+          error
+        );
+      }
+    }
+  }
+
+  console.log("Carpool creation process completed.");
+};
+
+const seedUsers = async () => {
+  ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  ensureUserCompleteness(
+    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+    "Relay",
+    "relay@gmail.com"
+  );
+
+  // createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
+  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+  // ]);
+
+  // createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
+  //   "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
+  // ]);
+};
+
+// @ts-ignore
+await seedUsers();

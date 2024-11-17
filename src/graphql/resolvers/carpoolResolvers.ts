@@ -250,6 +250,8 @@ export const carpoolResolvers = {
           childImageUrl: children.imageUrl,
           childSchoolId: children.schoolId,
           startingAddress: requests.startingAddress,
+          startingLatitude: requests.startingLatitude,
+          startingLongitude: requests.startingLongitude,
         })
         .from(requests)
         .innerJoin(users, eq(requests.parentId, users.id))
@@ -262,6 +264,8 @@ export const carpoolResolvers = {
         requests: requestsWithDetails.map((request) => ({
           id: request.requestId,
           startAddress: request.startingAddress,
+          startLat: request.startingLatitude,
+          startLon: request.startingLongitude,
           parent: {
             id: request.parentId,
             firstName: request.parentName,

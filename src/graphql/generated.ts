@@ -165,6 +165,13 @@ export type DetailedMessage = {
   text: Scalars['String']['output'];
 };
 
+export type ForegroundNotification = {
+  __typename?: 'ForegroundNotification';
+  message: Scalars['String']['output'];
+  senderId: Scalars['String']['output'];
+  timestamp: Scalars['String']['output'];
+};
+
 export type Friend = {
   __typename?: 'Friend';
   city?: Maybe<Scalars['String']['output']>;
@@ -215,6 +222,7 @@ export type LocationData = {
   __typename?: 'LocationData';
   lat: Scalars['Float']['output'];
   lon: Scalars['Float']['output'];
+  nextStop?: Maybe<NextStop>;
   senderId: Scalars['String']['output'];
   timestamp: Scalars['String']['output'];
 };
@@ -344,8 +352,14 @@ export type MutationLoginArgs = {
 
 export type MutationSendLocationArgs = {
   carpoolId: Scalars['String']['input'];
+  isFinalDestination: Scalars['Boolean']['input'];
+  isLeaving: Scalars['Boolean']['input'];
   lat: Scalars['Float']['input'];
   lon: Scalars['Float']['input'];
+  nextStop: NextStopInput;
+  timeToNextStop: Scalars['String']['input'];
+  timeUntilNextStop: Scalars['String']['input'];
+  totalTime: Scalars['String']['input'];
 };
 
 
@@ -365,6 +379,17 @@ export type MutationUpdateUserInfoArgs = {
   lastName?: InputMaybe<Scalars['String']['input']>;
   licenseImageUrl?: InputMaybe<Scalars['String']['input']>;
   phoneNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type NextStop = {
+  __typename?: 'NextStop';
+  address: Scalars['String']['output'];
+  requestId: Scalars['String']['output'];
+};
+
+export type NextStopInput = {
+  address: Scalars['String']['input'];
+  requestId: Scalars['String']['input'];
 };
 
 export type Query = {
@@ -553,9 +578,15 @@ export type School = {
 
 export type Subscription = {
   __typename?: 'Subscription';
+  foregroundNotification?: Maybe<ForegroundNotification>;
   groupMessageSent: GroupMessage;
   locationReceived?: Maybe<LocationData>;
   messageSent: DetailedMessage;
+};
+
+
+export type SubscriptionForegroundNotificationArgs = {
+  recipientId: Scalars['String']['input'];
 };
 
 

@@ -11,7 +11,6 @@
     "push": "bunx drizzle-kit push",
     "generate": "bunx drizzle-kit generate",
     "seed": "bun run src/database/seed.ts",
-    "seed-user": "bun run src/database/seedForUser.ts",
     "seed-schools": "bun run src/database/seedSchoolsAndCommCenters.ts",
     "studio": "bunx drizzle-kit studio",
     "codegen": "npx graphql-codegen"
@@ -30,6 +29,7 @@
     "express": "^4.21.1",
     "express-session": "^1.18.0",
     "firebase-admin": "^12.6.0",
+    "geolib": "^3.3.4",
     "graphql": "^16.9.0",
     "graphql-subscriptions": "^2.0.0",
     "graphql-tag": "^2.12.6",
@@ -48,6 +48,7 @@
     "@types/express": "^4.17.13",
     "@types/express-session": "^1.18.0",
     "@types/faker": "^6.6.9",
+    "@types/geolib": "^2.0.25",
     "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.24.2"
   }

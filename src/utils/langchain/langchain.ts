@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 
-async function queryOpenAI(prompt: string) {
+export async function queryOpenAI(prompt: string) {
   const model = new ChatOpenAI({
     openAIApiKey: process.env.OPENAI_API_KEY || "",
     temperature: 0.7,

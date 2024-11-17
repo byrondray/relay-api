@@ -121,24 +121,10 @@ export const carpoolTypeDefs = gql`
     endAddress: String!
     departureDate: String!
     departureTime: String!
-    requests: [RequestWithParentAndChild!]
-  }
-
-  type RequestWithParentAndChild {
-    id: String!
-    parent: User!
-    child: Child!
-  }
-
-  type CarpoolWithRequests {
-    id: String!
-    driverId: String!
-    vehicleId: String!
-    groupId: String!
-    startAddress: String!
-    endAddress: String!
-    departureDate: String!
-    departureTime: String!
+    startLat: Float!
+    startLon: Float!
+    endLat: Float!
+    endLon: Float!
     requests: [RequestWithParentAndChild!]
   }
 
@@ -160,6 +146,8 @@ export const carpoolTypeDefs = gql`
     child: Child!
     pickupTime: String!
     startAddress: String!
+    startLat: Float!
+    startLon: Float!
   }
 
   type UserCarpoolsAndRequests {

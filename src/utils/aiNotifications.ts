@@ -1,0 +1,97 @@
+import { queryOpenAI } from "./langchain/langchain";
+import { sendPushNotification } from "./pushNotification";
+
+interface CarpoolNotificationParams {
+  senderId: string;
+  driverName: string;
+  nextStop: string;
+  nextStopTime: string;
+  currentLocation: string;
+  destination: string;
+  parentName: string;
+  parentExpoToken: string;
+  childrenNames: string[]; // Include an array of children names
+}
+
+export const sendCarpoolNotification = async ({
+  senderId,
+  driverName,
+  nextStop,
+  nextStopTime,
+  currentLocation,
+  destination,
+  parentName,
+  parentExpoToken,
+  childrenNames,
+}: CarpoolNotificationParams) => {
+  const childList = childrenNames.join(", ");
+  const prompt = `
+    Write a friendly and reassuring notification for a parent named ${parentName}.
+    The carpool is driven by ${driverName}. The next stop is ${nextStop} at ${nextStopTime}.
+    The children (${childList}) are in the carpool. The car is currently at ${currentLocation}, heading towards ${destination}.
+    Include details that are helpful but keep the tone cheerful and brief.
+  `;
+
+  try {
+    const aiResponse = await queryOpenAI(prompt);
+    const messageContent: string =
+      typeof aiResponse?.content === "string"
+        ? aiResponse.content
+        : `Your carpool update: Driver ${driverName} is heading to ${nextStop} at ${nextStopTime}.`;
+
+    await sendPushNotification(
+      parentExpoToken,
+      messageContent,
+      senderId,
+      "Carpool Update"
+    );
+
+    console.log("Carpool notification sent successfully!");
+  } catch (error) {
+    console.error("Error sending carpool notification:", error);
+  }
+};
+
+interface CarpoolEndNotificationParams {
+  senderId: string;
+  driverName: string;
+  destination: string;
+  parentName: string;
+  parentExpoToken: string;
+  childrenNames: string[]; // Include an array of children names
+}
+
+export const sendCarpoolEndNotification = async ({
+  senderId,
+  driverName,
+  destination,
+  parentName,
+  parentExpoToken,
+  childrenNames,
+}: CarpoolEndNotificationParams) => {
+  const childList = childrenNames.join(", ");
+  const prompt = `
+    Write a friendly and reassuring notification for a parent named ${parentName}.
+    The carpool, driven by ${driverName}, has ended. The children (${childList}) have arrived safely at ${destination}.
+    Keep the tone cheerful and express gratitude for using the service.
+  `;
+
+  try {
+    const aiResponse = await queryOpenAI(prompt);
+    const messageContent: string =
+      typeof aiResponse?.content === "string"
+        ? aiResponse.content
+        : `The carpool, driven by ${driverName}, has ended. ${childList} have arrived safely at ${destination}.`;
+
+    await sendPushNotification(
+      parentExpoToken,
+      messageContent,
+      senderId,
+      "Carpool Completed"
+    );
+
+    console.log("Carpool end notification sent successfully!");
+  } catch (error) {
+    console.error("Error sending carpool end notification:", error);
+  }
+};

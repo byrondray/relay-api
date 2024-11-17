@@ -6,7 +6,7 @@ import { schools } from "./schools";
 export const children = sqliteTable("children", {
   id: text("id").primaryKey().notNull(),
   userId: text("user_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "set null" })
     .notNull(),
   firstName: text("first_name").notNull(),
   schoolId: text("school_id")

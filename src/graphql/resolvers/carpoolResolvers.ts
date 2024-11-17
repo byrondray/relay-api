@@ -8,17 +8,216 @@ import { eq, and, gte, lt, inArray } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
-import {
-  CreateCarpoolInput,
-  CreateRequestInput,
-  RequestWithChildrenAndParent,
-} from "../generated";
+import { CreateCarpoolInput, CreateRequestInput } from "../generated";
 import { groups } from "../../database/schema/groups";
 
 const db = getDB();
 
 export const carpoolResolvers = {
   Query: {
+    getCarpoolsByGroup: async (
+      _: any,
+      { groupId }: { groupId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const result = await db
+        .select()
+        .from(carpools)
+        .where(
+          and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
+        );
+
+      return result;
+    },
+
+    getPastCarpools: async (
+      _: any,
+      { userId }: { userId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser || currentUser.uid !== userId) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const result = await db
+        .select()
+        .from(carpools)
+        .where(
+          and(eq(carpools.driverId, userId), lt(carpools.departureDate, today))
+        );
+
+      return result;
+    },
+
+    getCurrentCarpools: async (
+      _: any,
+      { userId }: { userId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser || currentUser.uid !== userId) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const result = await db
+        .select()
+        .from(carpools)
+        .where(
+          and(eq(carpools.driverId, userId), gte(carpools.departureDate, today))
+        );
+
+      return result;
+    },
+
+    getCarpoolsByGroupsWithApprovedCarpoolers: async (
+      _: any,
+      { groupId }: { groupId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const carpoolsInGroup = await db
+        .select()
+        .from(carpools)
+        .where(
+          and(eq(carpools.groupId, groupId), gte(carpools.departureDate, today))
+        );
+
+      if (carpoolsInGroup.length === 0) {
+        return [];
+      }
+
+      const carpoolIds = carpoolsInGroup.map((carpool) => carpool.id);
+
+      const approvedRequests = await Promise.all(
+        carpoolIds.map(async (carpoolId) => {
+          const requestsForCarpool = await db
+            .select({
+              carpoolId: requests.carpoolId,
+              parentId: requests.parentId,
+              childFirstName: children.firstName,
+              parentName: users.firstName,
+            })
+            .from(requests)
+            .innerJoin(
+              childToRequest,
+              eq(childToRequest.requestId, requests.id)
+            )
+            .innerJoin(children, eq(childToRequest.childId, children.id))
+            .innerJoin(users, eq(requests.parentId, users.id))
+            .where(
+              and(eq(requests.isApproved, 1), eq(requests.carpoolId, carpoolId))
+            );
+          return { carpoolId, requestsForCarpool };
+        })
+      );
+
+      return carpoolsInGroup.map((carpool) => ({
+        ...carpool,
+        approvedCarpoolers:
+          approvedRequests.find((requests) => requests.carpoolId === carpool.id)
+            ?.requestsForCarpool || [],
+      }));
+    },
+
+    getCarpoolersByGroupWithoutApprovedRequests: async (
+      _: any,
+      {
+        groupId,
+        date,
+        time,
+        endingAddress,
+      }: { groupId: string; date: string; time: string; endingAddress: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const notApprovedRequests = await db
+        .select({
+          id: requests.id,
+          carpoolId: requests.carpoolId,
+          parentId: requests.parentId,
+          groupId: requests.groupId,
+          isApproved: requests.isApproved,
+          startAddress: requests.startingAddress,
+          endAddress: requests.endingAddress,
+          startingLat: requests.startingLatitude,
+          startingLon: requests.startingLongitude,
+          endingLat: requests.endingLatitude,
+          endingLon: requests.endingLongitude,
+          pickupTime: requests.pickupTime,
+          createdAt: requests.createdAt,
+        })
+        .from(requests)
+        .where(and(eq(requests.isApproved, 0), eq(requests.groupId, groupId)));
+
+      const requestIds = notApprovedRequests.map((request) => request.id);
+
+      const associatedChildren = await db
+        .select({
+          requestId: childToRequest.requestId,
+          childId: children.id,
+          firstName: children.firstName,
+          schoolId: children.schoolId,
+          schoolEmailAddress: children.schoolEmailAddress,
+          imageUrl: children.imageUrl,
+          userId: users.id,
+          parentFirstName: users.firstName,
+          parentLastName: users.lastName,
+          parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
+          parentPhoneNumber: users.phoneNumber,
+        })
+        .from(childToRequest)
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .innerJoin(users, eq(children.userId, users.id))
+        .where(inArray(childToRequest.requestId, requestIds));
+
+      const childrenByRequestId = associatedChildren.reduce((acc, child) => {
+        if (!acc[child.requestId]) {
+          acc[child.requestId] = [];
+        }
+        acc[child.requestId].push({
+          id: child.childId,
+          firstName: child.firstName,
+          schoolId: child.schoolId,
+          schoolEmailAddress: child.schoolEmailAddress,
+          imageUrl: child.imageUrl,
+          parent: {
+            id: child.userId,
+            firstName: child.parentFirstName,
+            lastName: child.parentLastName,
+            email: child.parentEmail,
+            imageUrl: child.parentImageUrl,
+            phoneNumber: child.parentPhoneNumber,
+          },
+        });
+        return acc;
+      }, {} as Record<string, Array<any>>);
+
+      const res = notApprovedRequests.map((request) => ({
+        ...request,
+        children: childrenByRequestId[request.id] || [],
+      }));
+      console.log(res[0].children[0], "result");
+      return res;
+    },
+
     getCarpoolWithRequests: async (
       _: any,
       { carpoolId }: { carpoolId: string },
@@ -29,7 +228,6 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      // Fetch the carpool details
       const carpool = await db
         .select()
         .from(carpools)
@@ -40,7 +238,6 @@ export const carpoolResolvers = {
         throw new ApolloError("Carpool not found");
       }
 
-      // Fetch the requests with all necessary details
       const requestsWithDetails = await db
         .select({
           requestId: requests.id,
@@ -52,7 +249,7 @@ export const carpoolResolvers = {
           childFirstName: children.firstName,
           childImageUrl: children.imageUrl,
           childSchoolId: children.schoolId,
-          startAddress: requests.startingAddress, // Include starting address
+          startingAddress: requests.startingAddress,
         })
         .from(requests)
         .innerJoin(users, eq(requests.parentId, users.id))
@@ -60,12 +257,11 @@ export const carpoolResolvers = {
         .innerJoin(children, eq(childToRequest.childId, children.id))
         .where(eq(requests.carpoolId, carpoolId));
 
-      // Return the carpool with associated requests and starting address
       return {
         ...carpool[0],
         requests: requestsWithDetails.map((request) => ({
           id: request.requestId,
-          startAddress: request.startAddress, // Include starting address here
+          startingAddress: request.startingAddress,
           parent: {
             id: request.parentId,
             firstName: request.parentName,
@@ -77,6 +273,63 @@ export const carpoolResolvers = {
             firstName: request.childFirstName,
             imageUrl: request.childImageUrl,
             schoolId: request.childSchoolId,
+          },
+        })),
+      };
+    },
+    getUserCarpoolsAndRequests: async (
+      _: any,
+      { userId }: { userId: string },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser || currentUser.uid !== userId) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const carpoolsByDriver = await db
+        .select()
+        .from(carpools)
+        .where(eq(carpools.driverId, userId));
+
+      const requestsWithDetails = await db
+        .select({
+          id: requests.id,
+          carpoolId: requests.carpoolId || null,
+          pickupTime: requests.pickupTime,
+          startAddress: requests.startingAddress,
+          parentId: requests.parentId,
+          parentName: users.firstName,
+          parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
+          childId: children.id,
+          childFirstName: children.firstName,
+          childImageUrl: children.imageUrl,
+          childSchoolId: children.schoolId,
+        })
+        .from(requests)
+        .innerJoin(users, eq(requests.parentId, users.id))
+        .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .where(eq(requests.parentId, userId));
+
+      return {
+        carpools: carpoolsByDriver,
+        requests: requestsWithDetails.map((request) => ({
+          id: request.id,
+          carpoolId: request.carpoolId || null,
+          pickupTime: request.pickupTime,
+          startAddress: request.startAddress,
+          parent: {
+            id: request.parentId,
+            firstName: request.parentName,
+            email: request.parentEmail,
+            imageUrl: request.parentImageUrl,
+          },
+          child: {
+            id: request.childId,
+            firstName: request.childFirstName,
+            schoolId: request.childSchoolId,
+            imageUrl: request.childImageUrl,
           },
         })),
       };

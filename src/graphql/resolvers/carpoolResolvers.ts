@@ -261,7 +261,7 @@ export const carpoolResolvers = {
         ...carpool[0],
         requests: requestsWithDetails.map((request) => ({
           id: request.requestId,
-          startingAddress: request.startingAddress,
+          startAddress: request.startingAddress,
           parent: {
             id: request.parentId,
             firstName: request.parentName,

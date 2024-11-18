@@ -19,6 +19,7 @@ import { childToRequest } from "../../database/schema/requestToChildren";
 import { calculateDistance } from "../../utils/findDistance";
 
 const notifiedEvents = new Set<string>();
+const notificationTracker = new Set<string>();
 
 const db = getDB();
 
@@ -123,9 +124,9 @@ export const mapDataResolver = {
       };
 
       // Notify for "leaving"
-      // console.log(isLeaving, "isLeaving");
-      if (!notifiedEvents.has(`LEAVING_${carpoolId}`)) {
-        notifiedEvents.add(`LEAVING_${carpoolId}`);
+      const leavingEventKey = `LEAVING_${carpoolId}`;
+      if (isLeaving && !notificationTracker.has(leavingEventKey)) {
+        notificationTracker.add(leavingEventKey);
 
         for (const participant of carpoolParticipants) {
           const notificationParams = {
@@ -142,7 +143,6 @@ export const mapDataResolver = {
 
           const aiMessage = await sendCarpoolNotification(notificationParams);
 
-          // Publish AI message to foregroundNotification subscription
           pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
             foregroundNotification: {
               message: aiMessage,
@@ -154,94 +154,76 @@ export const mapDataResolver = {
       }
 
       // Notify for "near stop"
-      const nextStopDetails = await db
-        .select({
-          parentId: requests.parentId,
-          startingLat: requests.startingLatitude,
-          startingLon: requests.startingLongitude,
-          parentName: users.firstName,
-          parentExpoToken: users.expoPushToken || "",
-          childNames: sql`GROUP_CONCAT(${children.firstName}, ', ')`.as(
-            "childNames"
-          ),
-        })
-        .from(requests)
-        .innerJoin(users, eq(requests.parentId, users.id))
-        .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
-        .innerJoin(children, eq(childToRequest.childId, children.id))
-        .where(eq(requests.id, nextStop.requestId))
-        .groupBy(users.id, requests.id);
+      const nearStopEventKey = `NEAR_STOP_${nextStop.requestId}`;
+      if (!notificationTracker.has(nearStopEventKey)) {
+        const nextStopDetails = await db
+          .select({
+            parentId: requests.parentId,
+            startingLat: requests.startingLatitude,
+            startingLon: requests.startingLongitude,
+            parentName: users.firstName,
+            parentExpoToken: users.expoPushToken || "",
+            childNames: sql`GROUP_CONCAT(${children.firstName}, ', ')`.as(
+              "childNames"
+            ),
+          })
+          .from(requests)
+          .innerJoin(users, eq(requests.parentId, users.id))
+          .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
+          .innerJoin(children, eq(childToRequest.childId, children.id))
+          .where(eq(requests.id, nextStop.requestId))
+          .groupBy(users.id, requests.id);
 
-      if (!nextStopDetails || nextStopDetails.length === 0) {
-        throw new ApolloError("Next stop details not found");
-      }
+        if (!nextStopDetails || nextStopDetails.length === 0) {
+          throw new ApolloError("Next stop details not found");
+        }
 
-      const stopCoordinates = {
-        latitude: parseInt(nextStopDetails[0].startingLat),
-        longitude: parseInt(nextStopDetails[0].startingLon),
-      };
+        const stopCoordinates = {
+          latitude: parseFloat(nextStopDetails[0].startingLat),
+          longitude: parseFloat(nextStopDetails[0].startingLon),
+        };
 
-      const driverCoordinates = { latitude: lat, longitude: lon };
-
-      let distanceToStop = 0;
-
-      if (
-        driverCoordinates?.latitude != null &&
-        driverCoordinates?.longitude != null &&
-        stopCoordinates?.latitude != null &&
-        stopCoordinates?.longitude != null
-      ) {
-        distanceToStop = calculateDistance(
+        const driverCoordinates = { latitude: lat, longitude: lon };
+        const distanceToStop = calculateDistance(
           driverCoordinates.latitude,
           driverCoordinates.longitude,
           stopCoordinates.latitude,
           stopCoordinates.longitude
         );
-      } else {
-        console.error("Invalid coordinates provided for distance calculation.");
-      }
 
-      if (
-        distanceToStop <= 50 &&
-        !notifiedEvents.has(`NEAR_STOP_${nextStop.requestId}`)
-      ) {
-        console.log(notifiedEvents, "notifiedEvents");
+        if (distanceToStop <= 50) {
+          notificationTracker.add(nearStopEventKey);
 
-        notifiedEvents.add(`NEAR_STOP_${nextStop.requestId}`);
-
-        for (const participant of nextStopDetails) {
-          const notificationParams = {
-            senderId: currentUser.uid,
-            driverName: carpool[0].driverName,
-            nextStop: nextStop.address,
-            nextStopTime: timeToNextStop,
-            currentLocation: `${lat}, ${lon}`,
-            destination: carpool[0].destination,
-            parentName: participant.parentName,
-            parentId: participant.parentId,
-            parentExpoToken: participant.parentExpoToken || "",
-            childrenNames: (participant.childNames as string).split(", "),
-          };
-
-          const aiMessage = await sendCarpoolNotification(notificationParams);
-
-          console.log("AI Message:", aiMessage);
-
-          // Publish AI message to foregroundNotification subscription
-          pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
-            foregroundNotification: {
-              message: aiMessage,
-              timestamp: new Date().toISOString(),
+          for (const participant of nextStopDetails) {
+            const notificationParams = {
               senderId: currentUser.uid,
-            },
-          });
+              driverName: carpool[0].driverName,
+              nextStop: nextStop.address,
+              nextStopTime: timeToNextStop,
+              currentLocation: `${lat}, ${lon}`,
+              destination: carpool[0].destination,
+              parentName: participant.parentName,
+              parentExpoToken: participant.parentExpoToken || "",
+              childrenNames: (participant.childNames as string).split(", "),
+            };
+
+            const aiMessage = await sendCarpoolNotification(notificationParams);
+
+            pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
+              foregroundNotification: {
+                message: aiMessage,
+                timestamp: new Date().toISOString(),
+                senderId: currentUser.uid,
+              },
+            });
+          }
         }
       }
 
       // Notify for "final destination"
-      if (isFinalDestination && !notifiedEvents.has(`FINAL_${carpoolId}`)) {
-        console.log(notifiedEvents, "notifiedEvents");
-        notifiedEvents.add(`FINAL_${carpoolId}`);
+      const finalDestinationKey = `FINAL_${carpoolId}`;
+      if (isFinalDestination && !notificationTracker.has(finalDestinationKey)) {
+        notificationTracker.add(finalDestinationKey);
 
         for (const participant of carpoolParticipants) {
           const endNotificationParams = {
@@ -249,7 +231,6 @@ export const mapDataResolver = {
             driverName: carpool[0].driverName,
             destination: carpool[0].destination,
             parentName: participant.parentName,
-            parentId: participant.parentId,
             parentExpoToken: participant.parentExpoToken || "",
             childrenNames: (participant.childNames as string).split(", "),
           };
@@ -258,9 +239,6 @@ export const mapDataResolver = {
             endNotificationParams
           );
 
-          console.log("AI Message:", aiMessage);
-
-          // Publish AI message to foregroundNotification subscription
           pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
             foregroundNotification: {
               message: aiMessage,

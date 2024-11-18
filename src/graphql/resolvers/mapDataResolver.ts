@@ -184,6 +184,14 @@ export const mapDataResolver = {
       };
 
       const driverCoordinates = { latitude: lat, longitude: lon };
+
+      console.log(
+        "Driver Coordinates:",
+        driverCoordinates,
+        "Stop Coordinates:",
+        stopCoordinates
+      );
+
       const distanceToStop = geolib.getDistance(
         driverCoordinates,
         stopCoordinates

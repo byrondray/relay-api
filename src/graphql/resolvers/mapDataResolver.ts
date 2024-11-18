@@ -194,17 +194,19 @@ export const mapDataResolver = {
 
       let distanceToStop = 0;
 
-      if (
-        driverCoordinates?.latitude != null &&
-        driverCoordinates?.longitude != null &&
-        stopCoordinates?.latitude != null &&
-        stopCoordinates?.longitude != null
-      ) {
-        distanceToStop = geolib.getDistance(driverCoordinates, stopCoordinates);
-        console.log("Distance to Stop:", distanceToStop);
-      } else {
-        console.error("Invalid coordinates provided for distance calculation.");
-      }
+      const { getDistance } = geolib;
+
+      // if (
+      //   driverCoordinates?.latitude != null &&
+      //   driverCoordinates?.longitude != null &&
+      //   stopCoordinates?.latitude != null &&
+      //   stopCoordinates?.longitude != null
+      // ) {
+      //   distanceToStop = getDistance(driverCoordinates, stopCoordinates);
+      //   console.log("Distance to Stop:", distanceToStop);
+      // } else {
+      //   console.error("Invalid coordinates provided for distance calculation.");
+      // }
 
       if (
         distanceToStop <= 50 &&

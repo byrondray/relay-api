@@ -16,7 +16,7 @@ import {
 } from "../../utils/aiNotifications";
 import { children } from "../../database/schema/children";
 import { childToRequest } from "../../database/schema/requestToChildren";
-// import { getDistance } from "geolib";
+import geolib from "geolib";
 
 const notifiedEvents = new Set<string>();
 
@@ -184,22 +184,24 @@ export const mapDataResolver = {
 
       let distanceToStop = 0;
 
-      // if (
-      //   driverCoordinates?.latitude != null &&
-      //   driverCoordinates?.longitude != null &&
-      //   stopCoordinates?.latitude != null &&
-      //   stopCoordinates?.longitude != null
-      // ) {
-      //   distanceToStop = getDistance(driverCoordinates, stopCoordinates);
-      //   console.log("Distance to Stop:", distanceToStop);
-      // } else {
-      //   console.error("Invalid coordinates provided for distance calculation.");
-      // }
+      if (
+        driverCoordinates?.latitude != null &&
+        driverCoordinates?.longitude != null &&
+        stopCoordinates?.latitude != null &&
+        stopCoordinates?.longitude != null
+      ) {
+        distanceToStop = geolib.getDistance(driverCoordinates, stopCoordinates);
+        console.log("Distance to Stop:", distanceToStop);
+      } else {
+        console.error("Invalid coordinates provided for distance calculation.");
+      }
 
       if (
         distanceToStop <= 50 &&
         !notifiedEvents.has(`NEAR_STOP_${nextStop.requestId}`)
       ) {
+        console.log(notifiedEvents, "notifiedEvents");
+
         notifiedEvents.add(`NEAR_STOP_${nextStop.requestId}`);
 
         for (const participant of nextStopDetails) {
@@ -233,6 +235,7 @@ export const mapDataResolver = {
 
       // Notify for "final destination"
       if (isFinalDestination && !notifiedEvents.has(`FINAL_${carpoolId}`)) {
+        console.log(notifiedEvents, "notifiedEvents");
         notifiedEvents.add(`FINAL_${carpoolId}`);
 
         for (const participant of carpoolParticipants) {

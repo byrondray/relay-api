@@ -365,43 +365,6 @@ export const carpoolResolvers = {
         driverChildIds,
       } = input;
 
-      console.log(
-        driverId,
-        "driverId",
-        vehicleId,
-        "vehicleId",
-        groupId,
-        "groupId",
-        startAddress,
-        "startAddress",
-        endAddress,
-        "endAddress",
-        startLat,
-        "startLat",
-        startLon,
-        "startLon",
-        endLat,
-        "endLat",
-        endLon,
-        "endLon",
-        departureDate,
-        "departureDate",
-        departureTime,
-        "departureTime",
-        extraCarSeat,
-        "extraCarSeat",
-        winterTires,
-        "winterTires",
-        tripPreferences,
-        "tripPreferences",
-        requestIds,
-        "requestIds",
-        driverChildIds,
-        "driverChildIds",
-        currentUser,
-        "currentUser"
-      );
-
       if (!currentUser || currentUser.uid !== driverId) {
         throw new ApolloError("Authentication required");
       }
@@ -410,7 +373,6 @@ export const carpoolResolvers = {
         throw new ApolloError("Missing required fields");
       }
 
-      // Create a new carpool
       const newCarpool = {
         id: uuid(),
         driverId,

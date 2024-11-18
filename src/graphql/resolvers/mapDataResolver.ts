@@ -18,7 +18,7 @@ import {
 } from "../../utils/aiNotifications";
 import { children } from "../../database/schema/children";
 import { childToRequest } from "../../database/schema/requestToChildren";
-import geolib from "geolib";
+// import { getDistance } from "geolib";
 
 const alreadyNotifiedStops = new Set<string>();
 const notifiedEvents = new Set<string>();
@@ -193,8 +193,6 @@ export const mapDataResolver = {
       );
 
       let distanceToStop = 0;
-
-      const { getDistance } = geolib;
 
       // if (
       //   driverCoordinates?.latitude != null &&

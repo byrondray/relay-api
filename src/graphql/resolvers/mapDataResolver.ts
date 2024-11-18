@@ -123,8 +123,8 @@ export const mapDataResolver = {
       };
 
       // Notify for "leaving"
-      console.log(isLeaving, "isLeaving");
-      if (isLeaving && !notifiedEvents.has(`LEAVING_${carpoolId}`)) {
+      // console.log(isLeaving, "isLeaving");
+      if (!notifiedEvents.has(`LEAVING_${carpoolId}`)) {
         notifiedEvents.add(`LEAVING_${carpoolId}`);
 
         for (const participant of carpoolParticipants) {
@@ -197,7 +197,6 @@ export const mapDataResolver = {
           stopCoordinates.latitude,
           stopCoordinates.longitude
         );
-        console.log("Distance to Stop:", distanceToStop);
       } else {
         console.error("Invalid coordinates provided for distance calculation.");
       }

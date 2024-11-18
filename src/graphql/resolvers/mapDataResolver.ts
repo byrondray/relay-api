@@ -192,10 +192,19 @@ export const mapDataResolver = {
         stopCoordinates
       );
 
-      const distanceToStop = geolib.getDistance(
-        driverCoordinates,
-        stopCoordinates
-      );
+      let distanceToStop = 0;
+
+      if (
+        driverCoordinates?.latitude != null &&
+        driverCoordinates?.longitude != null &&
+        stopCoordinates?.latitude != null &&
+        stopCoordinates?.longitude != null
+      ) {
+        distanceToStop = geolib.getDistance(driverCoordinates, stopCoordinates);
+        console.log("Distance to Stop:", distanceToStop);
+      } else {
+        console.error("Invalid coordinates provided for distance calculation.");
+      }
 
       if (
         distanceToStop <= 50 &&

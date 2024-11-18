@@ -4,14 +4,12 @@ import {
   filterSchoolsByName,
 } from "../../services/mapData.service";
 import { ApolloError } from "apollo-server-errors";
-import { getActiveCarpoolMembers } from "../../services/carpool.service";
 import { FirebaseUser } from "./userResolvers";
 import { getDB } from "../../database/client";
 import { requests } from "../../database/schema/carpoolRequests";
 import { carpools } from "../../database/schema/carpool";
-import { and, eq, gte, ne, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users } from "../../database/schema/users";
-import { sendPushNotification } from "../../utils/pushNotification";
 import {
   sendCarpoolEndNotification,
   sendCarpoolNotification,
@@ -20,7 +18,6 @@ import { children } from "../../database/schema/children";
 import { childToRequest } from "../../database/schema/requestToChildren";
 // import { getDistance } from "geolib";
 
-const alreadyNotifiedStops = new Set<string>();
 const notifiedEvents = new Set<string>();
 
 const db = getDB();
@@ -185,13 +182,6 @@ export const mapDataResolver = {
 
       const driverCoordinates = { latitude: lat, longitude: lon };
 
-      console.log(
-        "Driver Coordinates:",
-        driverCoordinates,
-        "Stop Coordinates:",
-        stopCoordinates
-      );
-
       let distanceToStop = 0;
 
       // if (
@@ -228,6 +218,8 @@ export const mapDataResolver = {
 
           const aiMessage = await sendCarpoolNotification(notificationParams);
 
+          console.log("AI Message:", aiMessage);
+
           // Publish AI message to foregroundNotification subscription
           pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
             foregroundNotification: {
@@ -258,6 +250,8 @@ export const mapDataResolver = {
             endNotificationParams
           );
 
+          console.log("AI Message:", aiMessage);
+
           // Publish AI message to foregroundNotification subscription
           pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
             foregroundNotification: {
@@ -269,7 +263,6 @@ export const mapDataResolver = {
         }
       }
 
-      // Publish location update via subscription
       for (const participant of carpoolParticipants) {
         pubsub.publish(`LOCATION_SENT_${participant.parentId}`, {
           locationReceived: locationData,

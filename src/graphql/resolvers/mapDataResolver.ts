@@ -294,6 +294,14 @@ export const mapDataResolver = {
         };
       }) => {
         console.log("Foreground Notification Payload:", payload);
+
+        let message = payload.foregroundNotification.message;
+
+        if (!message) {
+          message =
+            "There was a problem creating the message for the notification";
+        }
+
         return payload.foregroundNotification;
       },
     },

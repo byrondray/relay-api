@@ -16,7 +16,3 @@ export async function queryOpenAI(prompt: string) {
     throw error;
   }
 }
-
-queryOpenAI("Explain LangChain in simple terms.").then((response) => {
-  console.log("OpenAI response:", response.content);
-});

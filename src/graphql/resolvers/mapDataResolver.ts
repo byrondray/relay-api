@@ -16,7 +16,7 @@ import {
 } from "../../utils/aiNotifications";
 import { children } from "../../database/schema/children";
 import { childToRequest } from "../../database/schema/requestToChildren";
-import geolib from "geolib";
+import { calculateDistance } from "../../utils/findDistance";
 
 const notifiedEvents = new Set<string>();
 
@@ -190,7 +190,12 @@ export const mapDataResolver = {
         stopCoordinates?.latitude != null &&
         stopCoordinates?.longitude != null
       ) {
-        distanceToStop = geolib.getDistance(driverCoordinates, stopCoordinates);
+        distanceToStop = calculateDistance(
+          driverCoordinates.latitude,
+          driverCoordinates.longitude,
+          stopCoordinates.latitude,
+          stopCoordinates.longitude
+        );
         console.log("Distance to Stop:", distanceToStop);
       } else {
         console.error("Invalid coordinates provided for distance calculation.");

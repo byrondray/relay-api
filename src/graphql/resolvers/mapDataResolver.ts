@@ -123,6 +123,7 @@ export const mapDataResolver = {
       };
 
       // Notify for "leaving"
+      console.log(isLeaving, "isLeaving");
       if (isLeaving && !notifiedEvents.has(`LEAVING_${carpoolId}`)) {
         notifiedEvents.add(`LEAVING_${carpoolId}`);
 

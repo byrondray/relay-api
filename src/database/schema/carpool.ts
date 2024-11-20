@@ -7,13 +7,13 @@ import { groups } from "./groups";
 export const carpools = sqliteTable("carpools", {
   id: text("id").primaryKey().notNull(),
   driverId: text("driver_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   vehicleId: text("vehicle_id")
-    .references(() => vehicle.id)
+    .references(() => vehicle.id, { onDelete: "cascade" })
     .notNull(),
   groupId: text("group_id")
-    .references(() => groups.id)
+    .references(() => groups.id, { onDelete: "cascade" })
     .notNull(),
   startAddress: text("start_address").notNull(),
   endAddress: text("end_address").notNull(),

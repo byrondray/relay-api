@@ -4,7 +4,7 @@ import { users } from "../schema/users";
 export const vehicle = sqliteTable("vehicle", {
   id: text("id").primaryKey().notNull(),
   userId: text("user_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   make: text("make").notNull(),
   model: text("model").notNull(),

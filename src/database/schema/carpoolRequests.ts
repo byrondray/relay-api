@@ -7,12 +7,14 @@ import { sql } from "drizzle-orm";
 
 export const requests = sqliteTable("requests", {
   id: text("id").primaryKey().notNull(),
-  carpoolId: text("carpool_id").references(() => carpools.id),
+  carpoolId: text("carpool_id").references(() => carpools.id, {
+    onDelete: "cascade",
+  }),
   parentId: text("parent_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   groupId: text("group_id")
-    .references(() => groups.id)
+    .references(() => groups.id, { onDelete: "cascade" })
     .notNull(),
   isApproved: integer("is_approved").default(0),
   startingAddress: text("starting_address").notNull(),

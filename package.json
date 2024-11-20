@@ -12,6 +12,8 @@
     "generate": "bunx drizzle-kit generate",
     "seed": "bun run src/database/seed.ts",
     "seed-schools": "bun run src/database/seedSchoolsAndCommCenters.ts",
+    "clear-db": "bun run src/database/clearDb.ts",
+    "setup-db": "bun run clear-db && bun run seed-schools && bun run seed",
     "studio": "bunx drizzle-kit studio",
     "codegen": "npx graphql-codegen"
   },

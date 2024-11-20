@@ -5,9 +5,12 @@ import { communityCenters } from "./communityCenters";
 export const groups = sqliteTable("groups", {
   id: text("id").primaryKey().notNull(),
   name: text("name").notNull(),
-  schoolId: text("school_id").references(() => schools.id),
+  schoolId: text("school_id").references(() => schools.id, {
+    onDelete: "cascade",
+  }),
   communityCenterId: text("community_center_id").references(
-    () => communityCenters.id
+    () => communityCenters.id,
+    { onDelete: "cascade" }
   ),
   imageUrl: text("image_url"),
 });

@@ -5,10 +5,10 @@ import { requests } from "./carpoolRequests";
 export const childToRequest = sqliteTable("childToRequest", {
   id: text("id").primaryKey().notNull(),
   childId: text("child_id")
-    .references(() => children.id)
+    .references(() => children.id, { onDelete: "cascade" })
     .notNull(),
   requestId: text("request_id")
-    .references(() => requests.id)
+    .references(() => requests.id, { onDelete: "cascade" })
     .notNull(),
 });
 

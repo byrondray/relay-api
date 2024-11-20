@@ -338,20 +338,20 @@ export const createCarpoolWithRequests = async (
 };
 
 const seedUsers = async () => {
-  ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  // ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
   ensureUserCompleteness(
     "j71TabTn4VXU0bgSjxnd0lBGc3l1",
     "Relay",
     "relay@gmail.com"
   );
 
-  // createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
-  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
-  // ]);
+  createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
+    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+  ]);
 
-  // createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
-  //   "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
-  // ]);
+  createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
+    "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
+  ]);
 };
 
 // @ts-ignore

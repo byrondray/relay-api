@@ -5,9 +5,9 @@ import { groups } from "./groups";
 export const usersToGroups = sqliteTable("users_to_groups", {
   id: text("id").primaryKey().notNull(),
   userId: text("user_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   groupId: text("group_id")
-    .references(() => groups.id)
+    .references(() => groups.id, { onDelete: "cascade" })
     .notNull(),
 });

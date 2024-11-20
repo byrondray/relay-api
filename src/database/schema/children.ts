@@ -6,11 +6,11 @@ import { schools } from "./schools";
 export const children = sqliteTable("children", {
   id: text("id").primaryKey().notNull(),
   userId: text("user_id")
-    .references(() => users.id, { onDelete: "set null" })
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   firstName: text("first_name").notNull(),
   schoolId: text("school_id")
-    .references(() => schools.id)
+    .references(() => schools.id, { onDelete: "cascade" })
     .notNull(),
   imageUrl: text("image_url"),
   schoolEmailAddress: text("school_email_address"),

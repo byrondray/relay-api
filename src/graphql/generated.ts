@@ -81,7 +81,6 @@ export type CarpoolWithDriver = {
   extraCarSeat: Scalars['Boolean']['output'];
   groupId: Scalars['String']['output'];
   id: Scalars['String']['output'];
-  requests: Array<RequestWithParentAndChild>;
   startAddress: Scalars['String']['output'];
   startLat: Scalars['Float']['output'];
   startLon: Scalars['Float']['output'];

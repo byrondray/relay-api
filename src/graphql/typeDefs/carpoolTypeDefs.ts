@@ -39,7 +39,7 @@ export const carpoolTypeDefs = gql`
     tripPreferences: String
     estimatedTime: String
     createdAt: String!
-    requests: [RequestWithParentAndChild!]!
+    
   }
 
   type Request {

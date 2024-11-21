@@ -1,10 +1,7 @@
 import { ApolloError } from "apollo-server-errors";
 import { getDB } from "../../database/client";
 import { carpools } from "../../database/schema/carpool";
-import {
-  Request as ReqType,
-  requests,
-} from "../../database/schema/carpoolRequests";
+import { RequestInsert, requests } from "../../database/schema/carpoolRequests";
 import { users } from "../../database/schema/users";
 import { children } from "../../database/schema/children";
 import { eq, and, gte, lt, inArray } from "drizzle-orm";
@@ -14,7 +11,6 @@ import { childToRequest } from "../../database/schema/requestToChildren";
 import { CreateCarpoolInput, CreateRequestInput } from "../generated";
 import { groups } from "../../database/schema/groups";
 import { vehicle } from "../../database/schema/vehicle";
-import { alias } from "drizzle-orm/sqlite-core";
 
 const db = getDB();
 
@@ -295,13 +291,14 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      const driverAlias = alias(users, "driver");
-      const parentAlias = alias(users, "parent");
-
-      const carpoolsWithRequests = await db
+      // Fetch carpools with driver and vehicle info
+      const carpoolsByDriver = await db
         .select({
           id: carpools.id,
           driverId: carpools.driverId,
+          vehicle: {
+            ...vehicle,
+          },
           groupId: carpools.groupId,
           startAddress: carpools.startAddress,
           endAddress: carpools.endAddress,
@@ -312,134 +309,63 @@ export const carpoolResolvers = {
           endLat: carpools.endLat,
           endLon: carpools.endLon,
           extraCarSeat: carpools.extraCarSeat,
-          winterTires: carpools.winterTires,
-          tripPreferences: carpools.tripPreferences,
-          estimatedTime: carpools.estimatedTime,
-          createdAt: carpools.createdAt,
-          vehicle: {
-            ...vehicle,
-          },
           driver: {
-            id: driverAlias.id,
-            firstName: driverAlias.firstName,
-            lastName: driverAlias.lastName,
-            email: driverAlias.email,
-            phoneNumber: driverAlias.phoneNumber,
-            imageUrl: driverAlias.imageUrl,
-          },
-          requestId: requests.id,
-          pickupTime: requests.pickupTime,
-          requestStartAddress: requests.startingAddress,
-          parent: {
-            id: parentAlias.id,
-            firstName: parentAlias.firstName,
-            lastName: parentAlias.lastName,
-            email: parentAlias.email,
-            imageUrl: parentAlias.imageUrl,
-          },
-          child: {
-            id: children.id,
-            firstName: children.firstName,
-            schoolId: children.schoolId,
-            imageUrl: children.imageUrl,
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email,
+            phoneNumber: users.phoneNumber,
+            imageUrl: users.imageUrl,
           },
         })
         .from(carpools)
-        .innerJoin(driverAlias, eq(driverAlias.id, carpools.driverId))
+        .innerJoin(users, eq(users.id, carpools.driverId))
         .innerJoin(vehicle, eq(vehicle.id, carpools.vehicleId))
-        .leftJoin(requests, eq(requests.carpoolId, carpools.id))
-        .leftJoin(parentAlias, eq(parentAlias.id, requests.parentId))
-        .leftJoin(childToRequest, eq(childToRequest.requestId, requests.id))
-        .leftJoin(children, eq(children.id, childToRequest.childId))
         .where(eq(carpools.driverId, userId));
 
-      const groupedCarpools = carpoolsWithRequests.reduce((acc, row) => {
-        let carpool = acc.find((c) => c.id === row.id);
-
-        if (!carpool) {
-          carpool = {
-            id: row.id,
-            driverId: row.driverId,
-            groupId: row.groupId,
-            startAddress: row.startAddress,
-            endAddress: row.endAddress,
-            departureDate: row.departureDate,
-            departureTime: row.departureTime,
-            startLat: row.startLat,
-            startLon: row.startLon,
-            endLat: row.endLat,
-            endLon: row.endLon,
-            extraCarSeat: row.extraCarSeat,
-            winterTires: row.winterTires,
-            tripPreferences: row.tripPreferences,
-            estimatedTime: row.estimatedTime,
-            createdAt: row.createdAt,
-            vehicle: row.vehicle,
-            driver: row.driver,
-            requests: [],
-          };
-          acc.push(carpool);
-        }
-
-        if (row.requestId) {
-          let request = carpool.requests.find(
-            (r: ReqType) => r.id === row.requestId
-          );
-
-          if (!request) {
-            request = {
-              id: row.requestId,
-              pickupTime: row.pickupTime,
-              startAddress: row.requestStartAddress,
-              parent: row.parent,
-              children: [],
-            };
-            carpool.requests.push(request);
-          }
-
-          if (row.child?.id) {
-            request.children.push(row.child);
-          }
-        }
-
-        return acc;
-      }, [] as Array<any>);
-
-      const userRequests = await db
+      // Fetch requests with parent and child details
+      const requestsWithDetails = await db
         .select({
           id: requests.id,
-          carpoolId: requests.carpoolId,
+          carpoolId: requests.carpoolId || null,
           pickupTime: requests.pickupTime,
           startAddress: requests.startingAddress,
-          parent: {
-            id: parentAlias.id,
-            firstName: parentAlias.firstName,
-            lastName: parentAlias.lastName,
-            email: parentAlias.email,
-            imageUrl: parentAlias.imageUrl,
-          },
-          child: {
-            id: children.id,
-            firstName: children.firstName,
-            schoolId: children.schoolId,
-            imageUrl: children.imageUrl || "", // Ensure imageUrl is never null
-          },
+          parentId: requests.parentId,
+          parentName: users.firstName,
+          parentEmail: users.email,
+          parentImageUrl: users.imageUrl,
+          childId: children.id,
+          childFirstName: children.firstName,
+          childImageUrl: children.imageUrl,
+          childSchoolId: children.schoolId,
         })
         .from(requests)
-        .innerJoin(parentAlias, eq(parentAlias.id, requests.parentId))
+        .innerJoin(users, eq(requests.parentId, users.id))
         .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
-        .innerJoin(children, eq(children.id, childToRequest.childId))
+        .innerJoin(children, eq(childToRequest.childId, children.id))
         .where(eq(requests.parentId, userId));
 
       return {
-        carpools: groupedCarpools,
-        requests: userRequests.map((request) => ({
+        carpools: carpoolsByDriver.map((carpool) => ({
+          ...carpool,
+        })),
+        requests: requestsWithDetails.map((request) => ({
           id: request.id,
-          carpoolId: request.carpoolId,
+          carpoolId: request.carpoolId || null,
           pickupTime: request.pickupTime,
           startAddress: request.startAddress,
-          parent: request.parent,
-          child: request.child,
+          parent: {
+            id: request.parentId,
+            firstName: request.parentName,
+            email: request.parentEmail,
+            imageUrl: request.parentImageUrl,
+          },
+          child: {
+            id: request.childId,
+            firstName: request.childFirstName,
+            schoolId: request.childSchoolId,
+            imageUrl: request.childImageUrl,
+          },
         })),
       };
     },

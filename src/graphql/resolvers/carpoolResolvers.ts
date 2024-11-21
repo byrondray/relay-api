@@ -295,11 +295,9 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
-      // Aliases for `users` table
       const driverAlias = alias(users, "driver");
       const parentAlias = alias(users, "parent");
 
-      // Fetch carpools where the user is the driver
       const carpoolsWithRequests = await db
         .select({
           id: carpools.id,
@@ -355,7 +353,6 @@ export const carpoolResolvers = {
         .leftJoin(children, eq(children.id, childToRequest.childId))
         .where(eq(carpools.driverId, userId));
 
-      // Group requests and children by carpool
       const groupedCarpools = carpoolsWithRequests.reduce((acc, row) => {
         let carpool = acc.find((c) => c.id === row.id);
 
@@ -408,7 +405,6 @@ export const carpoolResolvers = {
         return acc;
       }, [] as Array<any>);
 
-      // Fetch requests where the user is a parent
       const userRequests = await db
         .select({
           id: requests.id,
@@ -426,7 +422,7 @@ export const carpoolResolvers = {
             id: children.id,
             firstName: children.firstName,
             schoolId: children.schoolId,
-            imageUrl: children.imageUrl,
+            imageUrl: children.imageUrl || "", // Ensure imageUrl is never null
           },
         })
         .from(requests)

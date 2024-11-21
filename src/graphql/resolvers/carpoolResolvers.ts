@@ -308,6 +308,7 @@ export const carpoolResolvers = {
           startLon: carpools.startLon,
           endLat: carpools.endLat,
           endLon: carpools.endLon,
+          extraCarSeat: carpools.extraCarSeat,
           driver: {
             id: users.id,
             firstName: users.firstName,

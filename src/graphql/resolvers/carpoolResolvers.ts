@@ -299,7 +299,7 @@ export const carpoolResolvers = {
       const driverAlias = alias(users, "driver");
       const parentAlias = alias(users, "parent");
 
-      // Fetch carpools with driver, vehicle, and associated requests with children
+      // Fetch carpools where the user is the driver
       const carpoolsWithRequests = await db
         .select({
           id: carpools.id,
@@ -347,10 +347,10 @@ export const carpoolResolvers = {
           },
         })
         .from(carpools)
-        .innerJoin(driverAlias, eq(driverAlias.id, carpools.driverId)) // Alias for driver
+        .innerJoin(driverAlias, eq(driverAlias.id, carpools.driverId))
         .innerJoin(vehicle, eq(vehicle.id, carpools.vehicleId))
         .leftJoin(requests, eq(requests.carpoolId, carpools.id))
-        .leftJoin(parentAlias, eq(parentAlias.id, requests.parentId)) // Alias for parent
+        .leftJoin(parentAlias, eq(parentAlias.id, requests.parentId))
         .leftJoin(childToRequest, eq(childToRequest.requestId, requests.id))
         .leftJoin(children, eq(children.id, childToRequest.childId))
         .where(eq(carpools.driverId, userId));
@@ -408,7 +408,44 @@ export const carpoolResolvers = {
         return acc;
       }, [] as Array<any>);
 
-      return groupedCarpools;
+      // Fetch requests where the user is a parent
+      const userRequests = await db
+        .select({
+          id: requests.id,
+          carpoolId: requests.carpoolId,
+          pickupTime: requests.pickupTime,
+          startAddress: requests.startingAddress,
+          parent: {
+            id: parentAlias.id,
+            firstName: parentAlias.firstName,
+            lastName: parentAlias.lastName,
+            email: parentAlias.email,
+            imageUrl: parentAlias.imageUrl,
+          },
+          child: {
+            id: children.id,
+            firstName: children.firstName,
+            schoolId: children.schoolId,
+            imageUrl: children.imageUrl,
+          },
+        })
+        .from(requests)
+        .innerJoin(parentAlias, eq(parentAlias.id, requests.parentId))
+        .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
+        .innerJoin(children, eq(children.id, childToRequest.childId))
+        .where(eq(requests.parentId, userId));
+
+      return {
+        carpools: groupedCarpools,
+        requests: userRequests.map((request) => ({
+          id: request.id,
+          carpoolId: request.carpoolId,
+          pickupTime: request.pickupTime,
+          startAddress: request.startAddress,
+          parent: request.parent,
+          child: request.child,
+        })),
+      };
     },
   },
 

@@ -68,16 +68,41 @@ export type CarpoolWithCarpoolers = {
   vehicleId: Scalars['String']['output'];
 };
 
+export type CarpoolWithDriver = {
+  __typename?: 'CarpoolWithDriver';
+  createdAt: Scalars['String']['output'];
+  departureDate: Scalars['String']['output'];
+  departureTime: Scalars['String']['output'];
+  driver: User;
+  endAddress: Scalars['String']['output'];
+  endLat: Scalars['Float']['output'];
+  endLon: Scalars['Float']['output'];
+  estimatedTime?: Maybe<Scalars['String']['output']>;
+  extraCarSeat: Scalars['Boolean']['output'];
+  groupId: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  startAddress: Scalars['String']['output'];
+  startLat: Scalars['Float']['output'];
+  startLon: Scalars['Float']['output'];
+  tripPreferences?: Maybe<Scalars['String']['output']>;
+  vehicle: Vehicle;
+  winterTires: Scalars['Boolean']['output'];
+};
+
 export type CarpoolWithRequests = {
   __typename?: 'CarpoolWithRequests';
   departureDate: Scalars['String']['output'];
   departureTime: Scalars['String']['output'];
   driverId: Scalars['String']['output'];
   endAddress: Scalars['String']['output'];
+  endLat: Scalars['Float']['output'];
+  endLon: Scalars['Float']['output'];
   groupId: Scalars['String']['output'];
   id: Scalars['String']['output'];
   requests?: Maybe<Array<RequestWithParentAndChild>>;
   startAddress: Scalars['String']['output'];
+  startLat: Scalars['Float']['output'];
+  startLon: Scalars['Float']['output'];
   vehicleId: Scalars['String']['output'];
 };
 
@@ -565,6 +590,8 @@ export type RequestWithParentAndChild = {
   parent: User;
   pickupTime: Scalars['String']['output'];
   startAddress: Scalars['String']['output'];
+  startLat: Scalars['Float']['output'];
+  startLon: Scalars['Float']['output'];
 };
 
 export type School = {
@@ -621,7 +648,7 @@ export type User = {
 
 export type UserCarpoolsAndRequests = {
   __typename?: 'UserCarpoolsAndRequests';
-  carpools: Array<Carpool>;
+  carpools: Array<CarpoolWithDriver>;
   requests: Array<RequestWithParentAndChild>;
 };
 

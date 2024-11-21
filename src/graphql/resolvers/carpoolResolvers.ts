@@ -10,6 +10,7 @@ import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
 import { CreateCarpoolInput, CreateRequestInput } from "../generated";
 import { groups } from "../../database/schema/groups";
+import { vehicle } from "../../database/schema/vehicle";
 
 const db = getDB();
 
@@ -290,11 +291,42 @@ export const carpoolResolvers = {
         throw new ApolloError("Authentication required");
       }
 
+      // Fetch carpools with driver and vehicle info
       const carpoolsByDriver = await db
-        .select()
+        .select({
+          id: carpools.id,
+          driverId: carpools.driverId,
+          vehicle: {
+            id: vehicle.id,
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            licensePlate: vehicle.licensePlate,
+          },
+          groupId: carpools.groupId,
+          startAddress: carpools.startAddress,
+          endAddress: carpools.endAddress,
+          departureDate: carpools.departureDate,
+          departureTime: carpools.departureTime,
+          startLat: carpools.startLat,
+          startLon: carpools.startLon,
+          endLat: carpools.endLat,
+          endLon: carpools.endLon,
+          driver: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email,
+            phoneNumber: users.phoneNumber,
+            imageUrl: users.imageUrl,
+          },
+        })
         .from(carpools)
+        .innerJoin(users, eq(users.id, carpools.driverId))
+        .innerJoin(vehicle, eq(vehicle.id, carpools.vehicleId))
         .where(eq(carpools.driverId, userId));
 
+      // Fetch requests with parent and child details
       const requestsWithDetails = await db
         .select({
           id: requests.id,
@@ -317,7 +349,9 @@ export const carpoolResolvers = {
         .where(eq(requests.parentId, userId));
 
       return {
-        carpools: carpoolsByDriver,
+        carpools: carpoolsByDriver.map((carpool) => ({
+          ...carpool,
+        })),
         requests: requestsWithDetails.map((request) => ({
           id: request.id,
           carpoolId: request.carpoolId || null,

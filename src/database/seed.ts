@@ -18,7 +18,9 @@ import { usersToGroups } from "./schema/usersToGroups";
 export const ensureUserCompleteness = async (
   userId: string,
   name?: string,
-  email?: string
+  email?: string,
+  imageUrl?: string,
+  childImageUrl?: string
 ) => {
   const db = getDB();
 
@@ -39,7 +41,9 @@ export const ensureUserCompleteness = async (
       email: email || "howie@gmail.com",
       phoneNumber: faker.phone.number(),
       city: faker.location.city(),
-      imageUrl: faker.helpers.arrayElement(parentImageUrls),
+      imageUrl: imageUrl
+        ? imageUrl
+        : faker.helpers.arrayElement(parentImageUrls),
       expoPushToken: faker.string.uuid(),
       createdAt: new Date().toISOString(),
       insuranceImageUrl: null,
@@ -143,7 +147,9 @@ export const ensureUserCompleteness = async (
         firstName: faker.person.firstName(),
         schoolId: edmondsSchool.id,
         schoolEmailAddress: faker.internet.email(),
-        imageUrl: faker.helpers.arrayElement(childImageUrls),
+        imageUrl: childImageUrl
+          ? childImageUrl
+          : faker.helpers.arrayElement(childImageUrls),
         createdAt: new Date().toISOString(),
       });
       console.log(`Created child with ID: ${childId} for user ID: ${userId}`);

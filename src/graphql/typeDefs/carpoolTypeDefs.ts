@@ -21,6 +21,26 @@ export const carpoolTypeDefs = gql`
     createdAt: String!
   }
 
+  type CarpoolWithDriver {
+    id: String!
+    driver: User!
+    vehicle: Vehicle!
+    groupId: String!
+    startAddress: String!
+    endAddress: String!
+    startLat: Float!
+    startLon: Float!
+    endLat: Float!
+    endLon: Float!
+    departureDate: String!
+    departureTime: String!
+    extraCarSeat: Boolean!
+    winterTires: Boolean!
+    tripPreferences: String
+    estimatedTime: String
+    createdAt: String!
+  }
+
   type Request {
     id: String!
     carpoolId: String
@@ -151,7 +171,7 @@ export const carpoolTypeDefs = gql`
   }
 
   type UserCarpoolsAndRequests {
-    carpools: [Carpool!]!
+    carpools: [CarpoolWithDriver!]!
     requests: [RequestWithParentAndChild!]!
   }
 

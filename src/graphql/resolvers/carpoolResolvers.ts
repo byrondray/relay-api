@@ -297,11 +297,7 @@ export const carpoolResolvers = {
           id: carpools.id,
           driverId: carpools.driverId,
           vehicle: {
-            id: vehicle.id,
-            make: vehicle.make,
-            model: vehicle.model,
-            year: vehicle.year,
-            licensePlate: vehicle.licensePlate,
+            ...vehicle,
           },
           groupId: carpools.groupId,
           startAddress: carpools.startAddress,

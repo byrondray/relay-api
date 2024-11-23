@@ -165,13 +165,7 @@ export const carpoolResolvers = {
           createdAt: requests.createdAt,
         })
         .from(requests)
-        .where(
-          and(
-            eq(requests.isApproved, 0),
-            eq(requests.groupId, groupId),
-            ne(requests.parentId, currentUser.uid)
-          )
-        );
+        .where(and(eq(requests.isApproved, 0), eq(requests.groupId, groupId)));
 
       const requestIds = notApprovedRequests.map((request) => request.id);
 

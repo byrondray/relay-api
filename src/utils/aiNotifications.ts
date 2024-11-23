@@ -26,11 +26,11 @@ export const sendCarpoolNotification = async ({
 }: CarpoolNotificationParams) => {
   const childList = childrenNames.join(", ");
   const prompt = `
-    Write a friendly and reassuring notification for a parent named ${parentName}.
-    The carpool is driven by ${driverName}. The next stop is ${nextStop} at ${nextStopTime}.
-    The children (${childList}) are in the carpool. The car is currently at ${currentLocation}, heading towards ${destination}.
-    Include details that are helpful but keep the tone cheerful and brief.
-  `;
+  Write a short and friendly notification for a parent named ${parentName}.
+  The carpool is driven by ${driverName}. The next stop is ${nextStop} at ${nextStopTime}.
+  The children (${childList}) are in the carpool. The car is currently at ${currentLocation}, heading towards ${destination}.
+  Limit the response to two sentences.
+`;
 
   try {
     const aiResponse = await queryOpenAI(prompt);
@@ -73,10 +73,10 @@ export const sendCarpoolEndNotification = async ({
 }: CarpoolEndNotificationParams) => {
   const childList = childrenNames.join(", ");
   const prompt = `
-    Write a friendly and reassuring notification for a parent named ${parentName}.
-    The carpool, driven by ${driverName}, has ended. The children (${childList}) have arrived safely at ${destination}.
-    Keep the tone cheerful and express gratitude for using the service.
-  `;
+  Write a short and friendly notification for a parent named ${parentName}.
+  The carpool, driven by ${driverName}, has ended. The children (${childList}) have arrived safely at ${destination}.
+  Limit the response to two sentences.
+`;
 
   try {
     const aiResponse = await queryOpenAI(prompt);

@@ -371,39 +371,39 @@ export const createCarpoolWithRequests = async (
 };
 
 const seedUsers = async () => {
-  // ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  await ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  await ensureUserCompleteness(
+    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+    "Relay",
+    "relay@gmail.com"
+  );
+
   // ensureUserCompleteness(
-  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
-  //   "Relay",
-  //   "relay@gmail.com"
+  //   evan.id,
+  //   evan.name,
+  //   evan.email,
+  //   evan.imageUrl,
+  //   evan.childImageUrl
   // );
 
-  ensureUserCompleteness(
-    evan.id,
-    evan.name,
-    evan.email,
-    evan.imageUrl,
-    evan.childImageUrl
-  );
+  // ensureUserCompleteness(
+  //   gloria.id,
+  //   gloria.name,
+  //   gloria.email,
+  //   gloria.imageUrl,
+  //   gloria.childImageUrl
+  // );
 
-  ensureUserCompleteness(
-    gloria.id,
-    gloria.name,
-    gloria.email,
-    gloria.imageUrl,
-    gloria.childImageUrl
-  );
+  await createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
+    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+  ]);
 
-  // createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
-  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
-  // ]);
+  await createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
+    "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
+  ]);
 
-  // createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
-  //   "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
-  // ]);
-
-  createCarpoolWithRequests(evan.id, [gloria.id]);
-  createCarpoolWithRequests(gloria.id, [evan.id]);
+  await createCarpoolWithRequests(evan.id, [gloria.id]);
+  await createCarpoolWithRequests(gloria.id, [evan.id]);
 };
 
 // @ts-ignore

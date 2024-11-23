@@ -325,7 +325,15 @@ export const mapDataResolver = {
         }
       }
 
-      return { success: true, notificationType };
+      return {
+        lat,
+        lon,
+        senderId: currentUser.uid,
+        timestamp: new Date().toISOString(),
+        nextStop: nextStop
+          ? { address: nextStop.address, requestId: nextStop.requestId }
+          : null,
+      };
     },
   },
 

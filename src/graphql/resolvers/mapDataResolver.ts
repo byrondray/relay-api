@@ -133,7 +133,7 @@ export const mapDataResolver = {
 
       return locationData;
     },
-    _sendNotificationInfo: async (
+    sendNotificationInfo: async (
       _: any,
       {
         carpoolId,
@@ -326,12 +326,6 @@ export const mapDataResolver = {
       }
 
       return { success: true, notificationType };
-    },
-    get sendNotificationInfo() {
-      return this._sendNotificationInfo;
-    },
-    set sendNotificationInfo(value) {
-      this._sendNotificationInfo = value;
     },
   },
 

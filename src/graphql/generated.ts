@@ -299,6 +299,7 @@ export type Mutation = {
   deleteMemberFromGroup: DeleteMemberFromGroupResponse;
   login: AuthPayload;
   sendLocation?: Maybe<LocationData>;
+  sendNotificationInfo?: Maybe<LocationData>;
   updateExpoPushToken: User;
   updateUserInfo: User;
 };
@@ -409,6 +410,18 @@ export type MutationSendLocationArgs = {
 };
 
 
+export type MutationSendNotificationInfoArgs = {
+  carpoolId: Scalars['String']['input'];
+  isFinalDestination: Scalars['Boolean']['input'];
+  lat: Scalars['Float']['input'];
+  lon: Scalars['Float']['input'];
+  nextStop: NextStopInput;
+  notificationType: NotificationType;
+  timeToNextStop: Scalars['String']['input'];
+  timeUntilNextStop: Scalars['String']['input'];
+};
+
+
 export type MutationUpdateExpoPushTokenArgs = {
   expoPushToken: Scalars['String']['input'];
   userId: Scalars['String']['input'];
@@ -437,6 +450,12 @@ export type NextStopInput = {
   address: Scalars['String']['input'];
   requestId: Scalars['String']['input'];
 };
+
+export enum NotificationType {
+  FinalDestination = 'FINAL_DESTINATION',
+  Leaving = 'LEAVING',
+  NearStop = 'NEAR_STOP'
+}
 
 export type Query = {
   __typename?: 'Query';

@@ -36,6 +36,12 @@ const mapDataTypeDefs = gql`
     filterSchoolsByName(name: String!): [School!]!
   }
 
+  enum NotificationType {
+    LEAVING
+    NEAR_STOP
+    FINAL_DESTINATION
+  }
+
   type Mutation {
     sendLocation(
       carpoolId: String!
@@ -46,6 +52,19 @@ const mapDataTypeDefs = gql`
       totalTime: String!
       timeUntilNextStop: String!
       isLeaving: Boolean!
+      isFinalDestination: Boolean!
+    ): LocationData
+  }
+
+  type Mutation {
+    sendNotificationInfo(
+      carpoolId: String!
+      notificationType: NotificationType!
+      lat: Float!
+      lon: Float!
+      nextStop: NextStopInput!
+      timeToNextStop: String!
+      timeUntilNextStop: String!
       isFinalDestination: Boolean!
     ): LocationData
   }

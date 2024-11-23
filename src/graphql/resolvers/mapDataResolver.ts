@@ -8,7 +8,7 @@ import { FirebaseUser } from "./userResolvers";
 import { getDB } from "../../database/client";
 import { requests } from "../../database/schema/carpoolRequests";
 import { carpools } from "../../database/schema/carpool";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { users } from "../../database/schema/users";
 import {
   sendCarpoolEndNotification,
@@ -160,7 +160,9 @@ export const mapDataResolver = {
         throw new ApolloError("Authentication required");
       }
 
-      console.log(lat, lon, "lat and lon");
+      if (!lat || !lon) {
+        return false;
+      }
 
       const carpoolParticipants = await db
         .select({
@@ -173,9 +175,16 @@ export const mapDataResolver = {
         })
         .from(requests)
         .innerJoin(users, eq(requests.parentId, users.id))
+        .innerJoin(carpools, eq(requests.carpoolId, carpools.id))
         .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
         .innerJoin(children, eq(childToRequest.childId, children.id))
-        .where(eq(requests.carpoolId, carpoolId))
+        .where(
+          and(
+            eq(requests.carpoolId, carpoolId),
+            ne(requests.parentId, currentUser.uid),
+            ne(carpools.driverId, currentUser.uid)
+          )
+        )
         .groupBy(users.id);
 
       if (!carpoolParticipants || carpoolParticipants.length === 0) {
@@ -217,7 +226,8 @@ export const mapDataResolver = {
                 childrenNames: (participant.childNames as string).split(", "),
               };
 
-              await sendCarpoolNotification(notificationParams);
+              const message = await sendCarpoolNotification(notificationParams);
+              console.log("Message:", message);
 
               pubsub.publish(
                 `FOREGROUND_NOTIFICATION_${participant.parentId}`,
@@ -271,7 +281,11 @@ export const mapDataResolver = {
                   childrenNames: (participant.childNames as string).split(", "),
                 };
 
-                await sendCarpoolNotification(notificationParams);
+                const message = await sendCarpoolNotification(
+                  notificationParams
+                );
+
+                console.log("Message:", message);
 
                 pubsub.publish(
                   `FOREGROUND_NOTIFICATION_${participant.parentId}`,
@@ -303,7 +317,11 @@ export const mapDataResolver = {
                 childrenNames: (participant.childNames as string).split(", "),
               };
 
-              await sendCarpoolEndNotification(endNotificationParams);
+              const message = await sendCarpoolEndNotification(
+                endNotificationParams
+              );
+
+              console.log("Message:", message);
 
               pubsub.publish(
                 `FOREGROUND_NOTIFICATION_${participant.parentId}`,

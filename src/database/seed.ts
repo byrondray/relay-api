@@ -15,6 +15,38 @@ import { childToRequest } from "./schema/requestToChildren";
 import { groups } from "./schema/groups";
 import { usersToGroups } from "./schema/usersToGroups";
 
+const evan = {
+  id: "VQDrhC1urNVkssfgLc8jZWVRpo32",
+  name: "Evan",
+  email: "evan@gmail.com",
+  imageUrl: "https://i.postimg.cc/WznZjdLj/evan-profile.png",
+  childImageUrl: "https://i.postimg.cc/FKd0cFcg/evan-child.jpg",
+};
+
+const vanessa = {
+  id: "dlKJ2KqPEzc4wHStEOPOkK6fin33",
+  name: "Vanessa",
+  email: "vanessa@gmail.com",
+  imageUrl: "",
+  childImageUrl: "https://i.postimg.cc/PqgYMGQG/vanessa-child.jpg",
+};
+
+const gloria = {
+  id: "JDUp6wskgdN2QxnLrV646NxlY2E3",
+  name: "Gloria",
+  email: "gloria@gmail.com",
+  imageUrl: "https://i.postimg.cc/j2KfGz1Z/gloria-profile.jpg",
+  childImageUrl: "https://i.postimg.cc/x1FKcNk1/gloria-child.jpg",
+};
+
+const kyanna = {
+  id: "r5nff8t7UYWfzPv9hCuuOWHZFt52",
+  name: "Kyanna",
+  email: "kyanna@gmail.com",
+  imageUrl: "https://i.postimg.cc/3xwX8Fxq/kyanna-profile.jpg",
+  childImageUrl: "",
+};
+
 export const ensureUserCompleteness = async (
   userId: string,
   name?: string,
@@ -139,25 +171,22 @@ export const ensureUserCompleteness = async (
 
   // If the user has no children, create two
   if (existingChildren.length === 0) {
-    for (let i = 0; i < 2; i++) {
-      const childId = uuid();
-      await db.insert(children).values({
-        id: childId,
-        userId: userId,
-        firstName: faker.person.firstName(),
-        schoolId: edmondsSchool.id,
-        schoolEmailAddress: faker.internet.email(),
-        imageUrl: childImageUrl
-          ? childImageUrl
-          : faker.helpers.arrayElement(childImageUrls),
-        createdAt: new Date().toISOString(),
-      });
-      console.log(`Created child with ID: ${childId} for user ID: ${userId}`);
-    }
-  } else if (existingChildren.length > 2) {
+    const childId = uuid();
+    await db.insert(children).values({
+      id: childId,
+      userId: userId,
+      firstName: faker.person.firstName(),
+      schoolId: edmondsSchool.id,
+      schoolEmailAddress: faker.internet.email(),
+      imageUrl: childImageUrl || "",
+
+      createdAt: new Date().toISOString(),
+    });
+    console.log(`Created child with ID: ${childId} for user ID: ${userId}`);
+  } else if (existingChildren.length > 1) {
     // If the user has more than 2 children, delete the excess
     const childrenToDelete = existingChildren
-      .slice(2) // Keep only the first two children, delete the rest
+      .slice(1) // Keep only the first two children, delete the rest
       .map((child) => child.id);
 
     await db.delete(children).where(inArray(children.id, childrenToDelete));
@@ -204,13 +233,11 @@ export const createCarpoolWithRequests = async (
 ) => {
   const db = getDB();
 
-  // Step 1: Ensure current user is complete
-  await ensureUserCompleteness(currentUserId);
+  // await ensureUserCompleteness(currentUserId);
 
-  // Step 2: Ensure other users are complete
-  for (const userId of otherUserIds) {
-    await ensureUserCompleteness(userId);
-  }
+  // for (const userId of otherUserIds) {
+  //   await ensureUserCompleteness(userId);
+  // }
 
   // Step 3: Create a carpool for the current user
   const carpoolId = uuid();
@@ -345,19 +372,38 @@ export const createCarpoolWithRequests = async (
 
 const seedUsers = async () => {
   // ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  // ensureUserCompleteness(
+  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+  //   "Relay",
+  //   "relay@gmail.com"
+  // );
+
   ensureUserCompleteness(
-    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
-    "Relay",
-    "relay@gmail.com"
+    evan.id,
+    evan.name,
+    evan.email,
+    evan.imageUrl,
+    evan.childImageUrl
   );
 
-  createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
-    "j71TabTn4VXU0bgSjxnd0lBGc3l1",
-  ]);
+  ensureUserCompleteness(
+    gloria.id,
+    gloria.name,
+    gloria.email,
+    gloria.imageUrl,
+    gloria.childImageUrl
+  );
 
-  createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
-    "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
-  ]);
+  // createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
+  //   "j71TabTn4VXU0bgSjxnd0lBGc3l1",
+  // ]);
+
+  // createCarpoolWithRequests("j71TabTn4VXU0bgSjxnd0lBGc3l1", [
+  //   "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
+  // ]);
+
+  createCarpoolWithRequests(evan.id, [gloria.id]);
+  createCarpoolWithRequests(gloria.id, [evan.id]);
 };
 
 // @ts-ignore

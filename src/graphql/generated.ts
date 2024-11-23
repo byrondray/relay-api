@@ -89,6 +89,27 @@ export type CarpoolWithDriver = {
   winterTires: Scalars['Boolean']['output'];
 };
 
+export type CarpoolWithDriverAndVehicle = {
+  __typename?: 'CarpoolWithDriverAndVehicle';
+  createdAt: Scalars['String']['output'];
+  departureDate: Scalars['String']['output'];
+  departureTime: Scalars['String']['output'];
+  driver: User;
+  endAddress: Scalars['String']['output'];
+  endLat: Scalars['Float']['output'];
+  endLon: Scalars['Float']['output'];
+  estimatedTime?: Maybe<Scalars['String']['output']>;
+  extraCarSeat: Scalars['Boolean']['output'];
+  groupId: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  startAddress: Scalars['String']['output'];
+  startLat: Scalars['Float']['output'];
+  startLon: Scalars['Float']['output'];
+  tripPreferences?: Maybe<Scalars['String']['output']>;
+  vehicle: Vehicle;
+  winterTires: Scalars['Boolean']['output'];
+};
+
 export type CarpoolWithRequests = {
   __typename?: 'CarpoolWithRequests';
   departureDate: Scalars['String']['output'];
@@ -648,7 +669,7 @@ export type User = {
 
 export type UserCarpoolsAndRequests = {
   __typename?: 'UserCarpoolsAndRequests';
-  carpools: Array<CarpoolWithDriver>;
+  carpools: Array<CarpoolWithDriverAndVehicle>;
   requests: Array<RequestWithParentAndChild>;
 };
 

@@ -4,7 +4,7 @@ import { carpools } from "../../database/schema/carpool";
 import { RequestInsert, requests } from "../../database/schema/carpoolRequests";
 import { users } from "../../database/schema/users";
 import { children } from "../../database/schema/children";
-import { eq, and, gte, lt, inArray } from "drizzle-orm";
+import { eq, and, gte, lt, inArray, ne } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
@@ -165,7 +165,13 @@ export const carpoolResolvers = {
           createdAt: requests.createdAt,
         })
         .from(requests)
-        .where(and(eq(requests.isApproved, 0), eq(requests.groupId, groupId)));
+        .where(
+          and(
+            eq(requests.isApproved, 0),
+            eq(requests.groupId, groupId),
+            ne(requests.parentId, currentUser.uid)
+          )
+        );
 
       const requestIds = notApprovedRequests.map((request) => request.id);
 

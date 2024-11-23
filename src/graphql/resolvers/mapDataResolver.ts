@@ -124,130 +124,6 @@ export const mapDataResolver = {
       };
 
       // Notify for "leaving"
-      const leavingEventKey = `LEAVING_${carpoolId}`;
-      if (isLeaving && !notificationTracker.has(leavingEventKey)) {
-        notificationTracker.add(leavingEventKey);
-
-        for (const participant of carpoolParticipants) {
-          const notificationParams = {
-            senderId: currentUser.uid,
-            driverName: carpool[0].driverName,
-            nextStop: nextStop.address,
-            nextStopTime: timeToNextStop,
-            currentLocation: carpool[0].currentLocation,
-            destination: carpool[0].destination,
-            parentName: participant.parentName,
-            parentExpoToken: participant.parentExpoToken || "",
-            childrenNames: (participant.childNames as string).split(", "),
-          };
-
-          const aiMessage = await sendCarpoolNotification(notificationParams);
-
-          pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
-            foregroundNotification: {
-              message: aiMessage,
-              timestamp: new Date().toISOString(),
-              senderId: currentUser.uid,
-            },
-          });
-        }
-      }
-
-      // Notify for "near stop"
-      const nearStopEventKey = `NEAR_STOP_${nextStop.requestId}`;
-      if (!notificationTracker.has(nearStopEventKey)) {
-        const nextStopDetails = await db
-          .select({
-            parentId: requests.parentId,
-            startingLat: requests.startingLatitude,
-            startingLon: requests.startingLongitude,
-            parentName: users.firstName,
-            parentExpoToken: users.expoPushToken || "",
-            childNames: sql`GROUP_CONCAT(${children.firstName}, ', ')`.as(
-              "childNames"
-            ),
-          })
-          .from(requests)
-          .innerJoin(users, eq(requests.parentId, users.id))
-          .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
-          .innerJoin(children, eq(childToRequest.childId, children.id))
-          .where(eq(requests.id, nextStop.requestId))
-          .groupBy(users.id, requests.id);
-
-        if (!nextStopDetails || nextStopDetails.length === 0) {
-          throw new ApolloError("Next stop details not found");
-        }
-
-        const stopCoordinates = {
-          latitude: parseFloat(nextStopDetails[0].startingLat),
-          longitude: parseFloat(nextStopDetails[0].startingLon),
-        };
-
-        const driverCoordinates = { latitude: lat, longitude: lon };
-        const distanceToStop = calculateDistance(
-          driverCoordinates.latitude,
-          driverCoordinates.longitude,
-          stopCoordinates.latitude,
-          stopCoordinates.longitude
-        );
-
-        if (distanceToStop <= 50) {
-          notificationTracker.add(nearStopEventKey);
-
-          for (const participant of nextStopDetails) {
-            const notificationParams = {
-              senderId: currentUser.uid,
-              driverName: carpool[0].driverName,
-              nextStop: nextStop.address,
-              nextStopTime: timeToNextStop,
-              currentLocation: `${lat}, ${lon}`,
-              destination: carpool[0].destination,
-              parentName: participant.parentName,
-              parentExpoToken: participant.parentExpoToken || "",
-              childrenNames: (participant.childNames as string).split(", "),
-            };
-
-            const aiMessage = await sendCarpoolNotification(notificationParams);
-
-            pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
-              foregroundNotification: {
-                message: aiMessage,
-                timestamp: new Date().toISOString(),
-                senderId: currentUser.uid,
-              },
-            });
-          }
-        }
-      }
-
-      // Notify for "final destination"
-      const finalDestinationKey = `FINAL_${carpoolId}`;
-      if (isFinalDestination && !notificationTracker.has(finalDestinationKey)) {
-        notificationTracker.add(finalDestinationKey);
-
-        for (const participant of carpoolParticipants) {
-          const endNotificationParams = {
-            senderId: currentUser.uid,
-            driverName: carpool[0].driverName,
-            destination: carpool[0].destination,
-            parentName: participant.parentName,
-            parentExpoToken: participant.parentExpoToken || "",
-            childrenNames: (participant.childNames as string).split(", "),
-          };
-
-          const aiMessage = await sendCarpoolEndNotification(
-            endNotificationParams
-          );
-
-          pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
-            foregroundNotification: {
-              message: aiMessage,
-              timestamp: new Date().toISOString(),
-              senderId: currentUser.uid,
-            },
-          });
-        }
-      }
 
       for (const participant of carpoolParticipants) {
         pubsub.publish(`LOCATION_SENT_${participant.parentId}`, {
@@ -256,6 +132,206 @@ export const mapDataResolver = {
       }
 
       return locationData;
+    },
+    _sendNotificationInfo: async (
+      _: any,
+      {
+        carpoolId,
+        notificationType,
+        lat,
+        lon,
+        nextStop,
+        timeToNextStop,
+        timeUntilNextStop,
+        isFinalDestination,
+      }: {
+        carpoolId: string;
+        notificationType: "LEAVING" | "NEAR_STOP" | "FINAL_DESTINATION";
+        lat?: number;
+        lon?: number;
+        nextStop?: { address: string; requestId: string };
+        timeToNextStop?: string;
+        timeUntilNextStop?: string;
+        isFinalDestination?: boolean;
+      },
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      const carpoolParticipants = await db
+        .select({
+          parentId: users.id,
+          parentName: users.firstName,
+          parentExpoToken: users.expoPushToken || "",
+          childNames: sql`GROUP_CONCAT(${children.firstName}, ', ')`.as(
+            "childNames"
+          ),
+        })
+        .from(requests)
+        .innerJoin(users, eq(requests.parentId, users.id))
+        .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
+        .innerJoin(children, eq(childToRequest.childId, children.id))
+        .where(eq(requests.carpoolId, carpoolId))
+        .groupBy(users.id);
+
+      if (!carpoolParticipants || carpoolParticipants.length === 0) {
+        throw new ApolloError("No participants found for the carpool");
+      }
+
+      const carpool = await db
+        .select({
+          driverName: users.firstName,
+          destination: carpools.endAddress,
+          currentLocation: carpools.startAddress,
+        })
+        .from(carpools)
+        .innerJoin(users, eq(carpools.driverId, users.id))
+        .where(eq(carpools.id, carpoolId));
+
+      if (!carpool || carpool.length === 0) {
+        throw new ApolloError("Carpool not found");
+      }
+
+      const driverName = carpool[0].driverName;
+
+      switch (notificationType) {
+        case "LEAVING": {
+          const notificationKey = `LEAVING_${carpoolId}`;
+          if (!notificationTracker.has(notificationKey)) {
+            notificationTracker.add(notificationKey);
+
+            for (const participant of carpoolParticipants) {
+              const notificationParams = {
+                senderId: currentUser.uid,
+                driverName,
+                nextStop: nextStop?.address || "",
+                nextStopTime: timeToNextStop || "",
+                currentLocation: carpool[0].currentLocation,
+                destination: carpool[0].destination,
+                parentName: participant.parentName,
+                parentExpoToken: participant.parentExpoToken || "",
+                childrenNames: (participant.childNames as string).split(", "),
+              };
+
+              const aiMessage = await sendCarpoolNotification(
+                notificationParams
+              );
+
+              pubsub.publish(
+                `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                {
+                  foregroundNotification: {
+                    message: aiMessage,
+                    timestamp: new Date().toISOString(),
+                    senderId: currentUser.uid,
+                  },
+                }
+              );
+            }
+          }
+          break;
+        }
+        case "NEAR_STOP": {
+          if (!nextStop) {
+            throw new ApolloError(
+              "Next stop details are required for NEAR_STOP"
+            );
+          }
+
+          const notificationKey = `NEAR_STOP_${nextStop.requestId}`;
+          if (!notificationTracker.has(notificationKey) && lat && lon) {
+            const stopCoordinates = {
+              latitude: lat,
+              longitude: lon,
+            };
+
+            const driverCoordinates = { latitude: lat!, longitude: lon! };
+            const distanceToStop = calculateDistance(
+              driverCoordinates.latitude,
+              driverCoordinates.longitude,
+              stopCoordinates.latitude,
+              stopCoordinates.longitude
+            );
+
+            if (distanceToStop <= 50) {
+              notificationTracker.add(notificationKey);
+
+              for (const participant of carpoolParticipants) {
+                const notificationParams = {
+                  senderId: currentUser.uid,
+                  driverName,
+                  nextStop: nextStop.address,
+                  nextStopTime: timeToNextStop || "",
+                  currentLocation: `${lat}, ${lon}`,
+                  destination: carpool[0].destination,
+                  parentName: participant.parentName,
+                  parentExpoToken: participant.parentExpoToken || "",
+                  childrenNames: (participant.childNames as string).split(", "),
+                };
+
+                const aiMessage = await sendCarpoolNotification(
+                  notificationParams
+                );
+
+                pubsub.publish(
+                  `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                  {
+                    foregroundNotification: {
+                      message: aiMessage,
+                      timestamp: new Date().toISOString(),
+                      senderId: currentUser.uid,
+                    },
+                  }
+                );
+              }
+            }
+          }
+          break;
+        }
+        case "FINAL_DESTINATION": {
+          const notificationKey = `FINAL_${carpoolId}`;
+          if (!notificationTracker.has(notificationKey)) {
+            notificationTracker.add(notificationKey);
+
+            for (const participant of carpoolParticipants) {
+              const endNotificationParams = {
+                senderId: currentUser.uid,
+                driverName,
+                destination: carpool[0].destination,
+                parentName: participant.parentName,
+                parentExpoToken: participant.parentExpoToken || "",
+                childrenNames: (participant.childNames as string).split(", "),
+              };
+
+              const aiMessage = await sendCarpoolEndNotification(
+                endNotificationParams
+              );
+
+              pubsub.publish(
+                `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                {
+                  foregroundNotification: {
+                    message: aiMessage,
+                    timestamp: new Date().toISOString(),
+                    senderId: currentUser.uid,
+                  },
+                }
+              );
+            }
+          }
+          break;
+        }
+      }
+
+      return { success: true, notificationType };
+    },
+    get sendNotificationInfo() {
+      return this._sendNotificationInfo;
+    },
+    set sendNotificationInfo(value) {
+      this._sendNotificationInfo = value;
     },
   },
 

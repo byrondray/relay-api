@@ -160,6 +160,8 @@ export const mapDataResolver = {
         throw new ApolloError("Authentication required");
       }
 
+      console.log(lat, lon, "lat and lon");
+
       const carpoolParticipants = await db
         .select({
           parentId: users.id,

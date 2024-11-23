@@ -181,7 +181,6 @@ export const mapDataResolver = {
         .where(
           and(
             eq(requests.carpoolId, carpoolId),
-            ne(requests.parentId, currentUser.uid),
             ne(carpools.driverId, currentUser.uid)
           )
         )

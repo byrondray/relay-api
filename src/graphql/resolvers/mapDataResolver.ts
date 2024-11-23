@@ -160,6 +160,8 @@ export const mapDataResolver = {
         throw new ApolloError("Authentication required");
       }
 
+      console.log(notificationType, lat, lon, nextStop, timeToNextStop);
+
       if (!lat || !lon) {
         return false;
       }
@@ -177,11 +179,7 @@ export const mapDataResolver = {
         .innerJoin(users, eq(requests.parentId, users.id))
         .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
         .innerJoin(children, eq(childToRequest.childId, children.id))
-        .where(
-          and(
-            eq(requests.carpoolId, carpoolId),
-          )
-        )
+        .where(and(eq(requests.carpoolId, carpoolId)))
         .groupBy(users.id);
 
       if (!carpoolParticipants || carpoolParticipants.length === 0) {
@@ -230,7 +228,7 @@ export const mapDataResolver = {
                 `FOREGROUND_NOTIFICATION_${participant.parentId}`,
                 {
                   foregroundNotification: {
-                    message: `Driver ${driverName} is leaving for the next stop.`,
+                    message: message,
                     timestamp: new Date().toISOString(),
                     senderId: currentUser.uid,
                   },
@@ -288,7 +286,7 @@ export const mapDataResolver = {
                   `FOREGROUND_NOTIFICATION_${participant.parentId}`,
                   {
                     foregroundNotification: {
-                      message: `Driver ${driverName} is near the next stop at ${nextStop.address}.`,
+                      message: message,
                       timestamp: new Date().toISOString(),
                       senderId: currentUser.uid,
                     },
@@ -324,7 +322,7 @@ export const mapDataResolver = {
                 `FOREGROUND_NOTIFICATION_${participant.parentId}`,
                 {
                   foregroundNotification: {
-                    message: `Driver ${driverName} has reached the final destination.`,
+                    message: message,
                     timestamp: new Date().toISOString(),
                     senderId: currentUser.uid,
                   },

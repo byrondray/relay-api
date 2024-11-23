@@ -46,9 +46,9 @@ export const sendCarpoolNotification = async ({
       "Carpool Update"
     );
 
+    console.log("Carpool notification sent successfully!");
     return messageContent;
 
-    console.log("Carpool notification sent successfully!");
   } catch (error) {
     console.error("Error sending carpool notification:", error);
   }

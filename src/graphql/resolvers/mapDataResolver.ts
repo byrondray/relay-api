@@ -179,7 +179,12 @@ export const mapDataResolver = {
         .innerJoin(users, eq(requests.parentId, users.id))
         .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
         .innerJoin(children, eq(childToRequest.childId, children.id))
-        .where(and(eq(requests.carpoolId, carpoolId)))
+        .where(
+          and(
+            eq(requests.carpoolId, carpoolId),
+            ne(requests.parentId, currentUser.uid)
+          )
+        )
         .groupBy(users.id);
 
       if (!carpoolParticipants || carpoolParticipants.length === 0) {
@@ -209,6 +214,9 @@ export const mapDataResolver = {
             notificationTracker.add(notificationKey);
 
             for (const participant of carpoolParticipants) {
+              if (participant.parentId === currentUser.uid) {
+                continue;
+              }
               const notificationParams = {
                 senderId: currentUser.uid,
                 driverName,
@@ -264,6 +272,9 @@ export const mapDataResolver = {
               notificationTracker.add(notificationKey);
 
               for (const participant of carpoolParticipants) {
+                if (participant.parentId === currentUser.uid) {
+                  continue;
+                }
                 const notificationParams = {
                   senderId: currentUser.uid,
                   driverName,
@@ -303,6 +314,9 @@ export const mapDataResolver = {
             notificationTracker.add(notificationKey);
 
             for (const participant of carpoolParticipants) {
+              if (participant.parentId === currentUser.uid) {
+                continue;
+              }
               const endNotificationParams = {
                 senderId: currentUser.uid,
                 driverName,
@@ -364,8 +378,9 @@ export const mapDataResolver = {
         if (!recipientId) {
           throw new ApolloError("Recipient ID must be provided.");
         }
-
-        return pubsub.asyncIterator(`FOREGROUND_NOTIFICATION_${recipientId}`);
+        const topic = `FOREGROUND_NOTIFICATION_${recipientId}`;
+        console.log("Client subscribed to topic:", topic);
+        return pubsub.asyncIterator(topic);
       },
       resolve: (payload: {
         foregroundNotification: {
@@ -374,7 +389,7 @@ export const mapDataResolver = {
           senderId: string;
         };
       }) => {
-        console.log("Foreground Notification Payload:", payload);
+        console.log("Foreground Notification Payload received:", payload);
 
         let message = payload.foregroundNotification.message;
 

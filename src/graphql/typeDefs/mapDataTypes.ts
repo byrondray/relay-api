@@ -66,9 +66,8 @@ const mapDataTypeDefs = gql`
       timeToNextStop: String!
       timeUntilNextStop: String!
       isFinalDestination: Boolean!
-    ): LocationData
+    ): Boolean
   }
-
   input NextStopInput {
     address: String!
     requestId: String!

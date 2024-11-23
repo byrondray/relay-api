@@ -198,6 +198,18 @@ export const mapDataResolver = {
 
       const driverName = carpool[0].driverName;
 
+      const sendNotification = async (params: any, participant: any) => {
+        const aiMessage = await sendCarpoolNotification(params);
+
+        pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
+          foregroundNotification: {
+            message: aiMessage,
+            timestamp: new Date().toISOString(),
+            senderId: currentUser.uid,
+          },
+        });
+      };
+
       switch (notificationType) {
         case "LEAVING": {
           const notificationKey = `LEAVING_${carpoolId}`;
@@ -217,20 +229,7 @@ export const mapDataResolver = {
                 childrenNames: (participant.childNames as string).split(", "),
               };
 
-              const aiMessage = await sendCarpoolNotification(
-                notificationParams
-              );
-
-              pubsub.publish(
-                `FOREGROUND_NOTIFICATION_${participant.parentId}`,
-                {
-                  foregroundNotification: {
-                    message: aiMessage,
-                    timestamp: new Date().toISOString(),
-                    senderId: currentUser.uid,
-                  },
-                }
-              );
+              await sendNotification(notificationParams, participant);
             }
           }
           break;
@@ -273,20 +272,7 @@ export const mapDataResolver = {
                   childrenNames: (participant.childNames as string).split(", "),
                 };
 
-                const aiMessage = await sendCarpoolNotification(
-                  notificationParams
-                );
-
-                pubsub.publish(
-                  `FOREGROUND_NOTIFICATION_${participant.parentId}`,
-                  {
-                    foregroundNotification: {
-                      message: aiMessage,
-                      timestamp: new Date().toISOString(),
-                      senderId: currentUser.uid,
-                    },
-                  }
-                );
+                await sendNotification(notificationParams, participant);
               }
             }
           }
@@ -325,17 +311,12 @@ export const mapDataResolver = {
           }
           break;
         }
+        default:
+          throw new ApolloError("Invalid notification type");
       }
 
-      return {
-        lat,
-        lon,
-        senderId: currentUser.uid,
-        timestamp: new Date().toISOString(),
-        nextStop: nextStop
-          ? { address: nextStop.address, requestId: nextStop.requestId }
-          : null,
-      };
+      return true;
+      // No need to return anything since the purpose is to trigger notifications
     },
   },
 

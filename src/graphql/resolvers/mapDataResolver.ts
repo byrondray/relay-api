@@ -175,13 +175,11 @@ export const mapDataResolver = {
         })
         .from(requests)
         .innerJoin(users, eq(requests.parentId, users.id))
-        .innerJoin(carpools, eq(requests.carpoolId, carpools.id))
         .innerJoin(childToRequest, eq(requests.id, childToRequest.requestId))
         .innerJoin(children, eq(childToRequest.childId, children.id))
         .where(
           and(
             eq(requests.carpoolId, carpoolId),
-            ne(carpools.driverId, currentUser.uid)
           )
         )
         .groupBy(users.id);

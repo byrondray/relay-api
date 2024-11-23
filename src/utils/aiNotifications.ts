@@ -46,6 +46,8 @@ export const sendCarpoolNotification = async ({
       "Carpool Update"
     );
 
+    return messageContent;
+
     console.log("Carpool notification sent successfully!");
   } catch (error) {
     console.error("Error sending carpool notification:", error);
@@ -91,6 +93,7 @@ export const sendCarpoolEndNotification = async ({
     );
 
     console.log("Carpool end notification sent successfully!");
+    return messageContent;
   } catch (error) {
     console.error("Error sending carpool end notification:", error);
   }

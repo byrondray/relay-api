@@ -198,18 +198,6 @@ export const mapDataResolver = {
 
       const driverName = carpool[0].driverName;
 
-      const sendNotification = async (params: any, participant: any) => {
-        const aiMessage = await sendCarpoolNotification(params);
-
-        pubsub.publish(`FOREGROUND_NOTIFICATION_${participant.parentId}`, {
-          foregroundNotification: {
-            message: aiMessage,
-            timestamp: new Date().toISOString(),
-            senderId: currentUser.uid,
-          },
-        });
-      };
-
       switch (notificationType) {
         case "LEAVING": {
           const notificationKey = `LEAVING_${carpoolId}`;
@@ -229,7 +217,18 @@ export const mapDataResolver = {
                 childrenNames: (participant.childNames as string).split(", "),
               };
 
-              await sendNotification(notificationParams, participant);
+              await sendCarpoolNotification(notificationParams);
+
+              pubsub.publish(
+                `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                {
+                  foregroundNotification: {
+                    message: `Driver ${driverName} is leaving for the next stop.`,
+                    timestamp: new Date().toISOString(),
+                    senderId: currentUser.uid,
+                  },
+                }
+              );
             }
           }
           break;
@@ -237,7 +236,7 @@ export const mapDataResolver = {
         case "NEAR_STOP": {
           if (!nextStop) {
             throw new ApolloError(
-              "Next stop details are required for NEAR_STOP"
+              "Next stop details are required for NEAR_STOP notification"
             );
           }
 
@@ -248,7 +247,7 @@ export const mapDataResolver = {
               longitude: lon,
             };
 
-            const driverCoordinates = { latitude: lat!, longitude: lon! };
+            const driverCoordinates = { latitude: lat, longitude: lon };
             const distanceToStop = calculateDistance(
               driverCoordinates.latitude,
               driverCoordinates.longitude,
@@ -272,7 +271,18 @@ export const mapDataResolver = {
                   childrenNames: (participant.childNames as string).split(", "),
                 };
 
-                await sendNotification(notificationParams, participant);
+                await sendCarpoolNotification(notificationParams);
+
+                pubsub.publish(
+                  `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                  {
+                    foregroundNotification: {
+                      message: `Driver ${driverName} is near the next stop at ${nextStop.address}.`,
+                      timestamp: new Date().toISOString(),
+                      senderId: currentUser.uid,
+                    },
+                  }
+                );
               }
             }
           }
@@ -293,15 +303,13 @@ export const mapDataResolver = {
                 childrenNames: (participant.childNames as string).split(", "),
               };
 
-              const aiMessage = await sendCarpoolEndNotification(
-                endNotificationParams
-              );
+              await sendCarpoolEndNotification(endNotificationParams);
 
               pubsub.publish(
                 `FOREGROUND_NOTIFICATION_${participant.parentId}`,
                 {
                   foregroundNotification: {
-                    message: aiMessage,
+                    message: `Driver ${driverName} has reached the final destination.`,
                     timestamp: new Date().toISOString(),
                     senderId: currentUser.uid,
                   },
@@ -316,7 +324,6 @@ export const mapDataResolver = {
       }
 
       return true;
-      // No need to return anything since the purpose is to trigger notifications
     },
   },
 

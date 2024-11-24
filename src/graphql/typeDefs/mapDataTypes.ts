@@ -57,6 +57,10 @@ const mapDataTypeDefs = gql`
   }
 
   type Mutation {
+    resetNotificationTracking: Boolean!
+  }
+
+  type Mutation {
     sendNotificationInfo(
       carpoolId: String!
       notificationType: NotificationType!

@@ -352,6 +352,22 @@ export const mapDataResolver = {
 
       return true;
     },
+    resetNotificationTracking: async (
+      _: any,
+      __: any,
+      { currentUser }: FirebaseUser
+    ) => {
+      if (!currentUser) {
+        throw new ApolloError("Authentication required");
+      }
+
+      // Clear the tracking sets
+      notifiedEvents.clear();
+      notificationTracker.clear();
+
+      console.log("Notification tracking reset successfully.");
+      return true;
+    },
   },
 
   Subscription: {

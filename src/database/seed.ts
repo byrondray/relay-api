@@ -44,7 +44,7 @@ const kyanna = {
   name: "Kyanna",
   email: "kyanna@gmail.com",
   imageUrl: "https://i.postimg.cc/3xwX8Fxq/kyanna-profile.jpg",
-  childImageUrl: "",
+  childImageUrl: "https://i.postimg.cc/NffWL2cC/kyanna-child.jpg",
 };
 
 export const ensureUserCompleteness = async (
@@ -378,21 +378,37 @@ const seedUsers = async () => {
     "relay@gmail.com"
   );
 
-  // ensureUserCompleteness(
-  //   evan.id,
-  //   evan.name,
-  //   evan.email,
-  //   evan.imageUrl,
-  //   evan.childImageUrl
-  // );
+  ensureUserCompleteness(
+    evan.id,
+    evan.name,
+    evan.email,
+    evan.imageUrl,
+    evan.childImageUrl
+  );
+
+  ensureUserCompleteness(
+    gloria.id,
+    gloria.name,
+    gloria.email,
+    gloria.imageUrl,
+    gloria.childImageUrl
+  );
 
   // ensureUserCompleteness(
-  //   gloria.id,
-  //   gloria.name,
-  //   gloria.email,
-  //   gloria.imageUrl,
-  //   gloria.childImageUrl
+  //   vanessa.id,
+  //   vanessa.name,
+  //   vanessa.email,
+  //   vanessa.imageUrl,
+  //   vanessa.childImageUrl
   // );
+
+  ensureUserCompleteness(
+    kyanna.id,
+    kyanna.name,
+    kyanna.email,
+    kyanna.imageUrl,
+    kyanna.childImageUrl
+  );
 
   await createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
     "j71TabTn4VXU0bgSjxnd0lBGc3l1",
@@ -402,8 +418,9 @@ const seedUsers = async () => {
     "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
   ]);
 
-  await createCarpoolWithRequests(evan.id, [gloria.id]);
-  await createCarpoolWithRequests(gloria.id, [evan.id]);
+  await createCarpoolWithRequests(evan.id, [gloria.id, kyanna.id]);
+  await createCarpoolWithRequests(gloria.id, [evan.id, kyanna.id]);
+  await createCarpoolWithRequests(kyanna.id, [evan.id, gloria.id]);
 };
 
 // @ts-ignore

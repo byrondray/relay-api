@@ -118,6 +118,7 @@ export const mapDataResolver = {
 
       const locationData = {
         senderId: currentUser.uid,
+        carpoolId: `${carpoolId}`,
         lat,
         lon,
         timestamp: new Date().toISOString(),

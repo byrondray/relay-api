@@ -21,6 +21,7 @@ const mapDataTypeDefs = gql`
   type LocationData {
     lat: Float!
     lon: Float!
+    carpoolId: String!
     senderId: String!
     timestamp: String!
     nextStop: NextStop

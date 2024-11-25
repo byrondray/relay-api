@@ -104,6 +104,7 @@ export const mapDataResolver = {
 
       const carpool = await db
         .select({
+          id: carpools.id,
           driverName: users.firstName,
           destination: carpools.endAddress,
           currentLocation: carpools.startAddress,
@@ -118,7 +119,7 @@ export const mapDataResolver = {
 
       const locationData = {
         senderId: currentUser.uid,
-        carpoolId: `${carpoolId}`,
+        carpoolId: carpool[0].id,
         lat,
         lon,
         timestamp: new Date().toISOString(),

@@ -108,6 +108,7 @@ export const mapDataResolver = {
           driverName: users.firstName,
           destination: carpools.endAddress,
           currentLocation: carpools.startAddress,
+          driverId: carpools.driverId,
         })
         .from(carpools)
         .innerJoin(users, eq(carpools.driverId, users.id))
@@ -120,6 +121,7 @@ export const mapDataResolver = {
       const locationData = {
         senderId: currentUser.uid,
         carpoolId: carpool[0].id,
+        driverId: carpool[0].driverId,
         lat,
         lon,
         timestamp: new Date().toISOString(),

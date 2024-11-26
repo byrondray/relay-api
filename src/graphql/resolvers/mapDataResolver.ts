@@ -268,19 +268,11 @@ export const mapDataResolver = {
 
             notificationTracker.add(notificationKey);
 
-            const request = await db
-              .select()
-              .from(requests)
-              .where(eq(requests.id, nextStop.requestId));
-
             for (const participant of carpoolParticipants) {
               if (participant.parentId === currentUser.uid) {
                 continue;
               }
-              if (!request || request.length === 0) {
-                throw new ApolloError("Request not found");
-              }
-             
+
               const notificationParams = {
                 senderId: currentUser.uid,
                 driverName,

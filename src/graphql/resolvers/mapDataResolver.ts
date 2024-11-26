@@ -164,7 +164,7 @@ export const mapDataResolver = {
         throw new ApolloError("Authentication required");
       }
 
-      console.log(notificationType, lat, lon, nextStop, timeToNextStop);
+      console.log(timeUntilNextStop, "time left");
 
       if (!lat || !lon) {
         return false;
@@ -268,8 +268,19 @@ export const mapDataResolver = {
 
             notificationTracker.add(notificationKey);
 
+            const request = await db
+              .select()
+              .from(requests)
+              .where(eq(requests.id, nextStop.requestId));
+
             for (const participant of carpoolParticipants) {
               if (participant.parentId === currentUser.uid) {
+                continue;
+              }
+              if (!request || request.length === 0) {
+                throw new ApolloError("Request not found");
+              }
+              if (request[0].parentId !== participant.parentId) {
                 continue;
               }
               const notificationParams = {

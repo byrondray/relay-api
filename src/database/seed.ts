@@ -236,11 +236,7 @@ export const createCarpoolWithRequests = async (
 ) => {
   const db = getDB();
 
-  // await ensureUserCompleteness(currentUserId);
-
-  // for (const userId of otherUserIds) {
-  //   await ensureUserCompleteness(userId);
-  // }
+  const usedAddresses = new Set<string>(); // Track used addresses
 
   // Step 3: Create a carpool for the current user
   const carpoolId = uuid();
@@ -302,7 +298,13 @@ export const createCarpoolWithRequests = async (
       continue;
     }
 
-    const addressInVancouver = faker.helpers.arrayElement(addressesInVancouver);
+    // Find an address not already used
+    let addressInVancouver;
+    do {
+      addressInVancouver = faker.helpers.arrayElement(addressesInVancouver);
+    } while (usedAddresses.has(addressInVancouver.address));
+
+    usedAddresses.add(addressInVancouver.address); // Mark address as used
 
     const requestData = {
       id: requestId,
@@ -325,7 +327,6 @@ export const createCarpoolWithRequests = async (
 
     // Link children to the request
     for (const child of userChildren) {
-      // Check if the child exists in the database
       const childExists = await db
         .select()
         .from(children)
@@ -337,7 +338,6 @@ export const createCarpoolWithRequests = async (
         continue;
       }
 
-      // Check if the request exists in the database
       const requestExists = await db
         .select()
         .from(requests)
@@ -349,7 +349,6 @@ export const createCarpoolWithRequests = async (
         continue;
       }
 
-      // Insert into childToRequest
       const childToRequestData = {
         id: uuid(),
         childId: child.id,

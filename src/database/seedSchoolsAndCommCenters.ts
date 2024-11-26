@@ -73,4 +73,5 @@ const seedGroups = async () => {
   );
 };
 
-seedGroups().catch((error) => console.error("Error seeding groups:", error));
+// @ts-ignore
+await seedGroups().catch((error) => console.error("Error seeding groups:", error));

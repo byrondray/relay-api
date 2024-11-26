@@ -6,8 +6,11 @@ import { faker } from "@faker-js/faker";
 import { v4 as uuid } from "uuid";
 import { friends } from "./schema/friends";
 import { eq, inArray, ne } from "drizzle-orm";
-import { addressesInVancouver, childImageUrls } from "./seedForUser";
-import { parentImageUrls } from "./seedForUser";
+import {
+  addressesInVancouver,
+  childImageUrls,
+  parentImageUrls,
+} from "./seedForUser";
 import { schools } from "./schema/schools";
 import { carpools } from "./schema/carpool";
 import { requests } from "./schema/carpoolRequests";
@@ -27,7 +30,7 @@ const vanessa = {
   id: "dlKJ2KqPEzc4wHStEOPOkK6fin33",
   name: "Vanessa",
   email: "vanessa@gmail.com",
-  imageUrl: "",
+  imageUrl: "https://i.postimg.cc/MGXwYb48/vanessa-profile.jpg",
   childImageUrl: "https://i.postimg.cc/PqgYMGQG/vanessa-child.jpg",
 };
 
@@ -370,15 +373,98 @@ export const createCarpoolWithRequests = async (
   console.log("Carpool creation process completed.");
 };
 
+export const createEdmondsRequestForUser = async (userId: string) => {
+  const db = getDB();
+
+  // Step 1: Find the user by name
+  const [user] = await db
+    .select()
+    .from(userSchema)
+    .where(eq(userSchema.id, userId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error(`User with name "${userId}" not found.`);
+  }
+
+  // Step 2: Find the Edmonds Community School group
+  const [edmondsGroup] = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.name, "Edmonds Community School"))
+    .limit(1);
+
+  if (!edmondsGroup) {
+    throw new Error(`Edmonds Community School group not found.`);
+  }
+
+  // Step 3: Get one child for the user
+  const [userChild] = await db
+    .select()
+    .from(children)
+    .where(eq(children.userId, user.id))
+    .limit(1);
+
+  if (!userChild) {
+    throw new Error(`No children found for user "${userId}".`);
+  }
+
+  const fakeAddress = faker.helpers.arrayElement(addressesInVancouver);
+
+  // Step 4: Create a request for the user
+  const requestId = uuid();
+  const address = fakeAddress.address;
+  const latitude = fakeAddress.lat.toString();
+  const longitude = fakeAddress.lon.toString();
+
+  const newRequest = {
+    id: requestId,
+    carpoolId: null,
+    parentId: user.id,
+    groupId: edmondsGroup.id,
+    isApproved: 0,
+    startingAddress: address,
+    endingAddress: "Richmond Olympic Oval",
+    startingLatitude: latitude,
+    startingLongitude: longitude,
+    endingLatitude: "49.17911517691895",
+    endingLongitude: "-123.1509899989768",
+    pickupTime: "03:30 PM",
+    createdAt: new Date().toISOString(),
+  };
+
+  await db.insert(requests).values(newRequest);
+  console.log(`Created request with ID: ${requestId} for user "${userId}"`);
+
+  const childToRequestData = {
+    id: uuid(),
+    childId: userChild.id,
+    requestId: requestId,
+  };
+
+  await db.insert(childToRequest).values(childToRequestData);
+  console.log(
+    `Linked child with ID: ${userChild.id} to request ID: ${requestId}`
+  );
+};
+
 const seedUsers = async () => {
-  await ensureUserCompleteness("hkdSMSsaZIg4tJE8q4fC8ejp1hO2");
+  await ensureUserCompleteness(
+    "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
+    "Howie",
+    "howie@gmail.com",
+    parentImageUrls[1],
+    childImageUrls[0]
+  );
   await ensureUserCompleteness(
     "j71TabTn4VXU0bgSjxnd0lBGc3l1",
     "Relay",
-    "relay@gmail.com"
+    "relay@gmail.com",
+    parentImageUrls[0],
+    childImageUrls[1]
   );
 
-  ensureUserCompleteness(
+  await ensureUserCompleteness(
     evan.id,
     evan.name,
     evan.email,
@@ -386,7 +472,7 @@ const seedUsers = async () => {
     evan.childImageUrl
   );
 
-  ensureUserCompleteness(
+  await ensureUserCompleteness(
     gloria.id,
     gloria.name,
     gloria.email,
@@ -394,21 +480,26 @@ const seedUsers = async () => {
     gloria.childImageUrl
   );
 
-  // ensureUserCompleteness(
-  //   vanessa.id,
-  //   vanessa.name,
-  //   vanessa.email,
-  //   vanessa.imageUrl,
-  //   vanessa.childImageUrl
-  // );
+  await ensureUserCompleteness(
+    vanessa.id,
+    vanessa.name,
+    vanessa.email,
+    vanessa.imageUrl,
+    vanessa.childImageUrl
+  );
 
-  ensureUserCompleteness(
+  await ensureUserCompleteness(
     kyanna.id,
     kyanna.name,
     kyanna.email,
     kyanna.imageUrl,
     kyanna.childImageUrl
   );
+
+  await createEdmondsRequestForUser(evan.id);
+  await createEdmondsRequestForUser(gloria.id);
+  await createEdmondsRequestForUser(vanessa.id);
+  await createEdmondsRequestForUser(kyanna.id);
 
   await createCarpoolWithRequests("hkdSMSsaZIg4tJE8q4fC8ejp1hO2", [
     "j71TabTn4VXU0bgSjxnd0lBGc3l1",

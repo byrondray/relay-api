@@ -4,13 +4,18 @@ import { carpools } from "../../database/schema/carpool";
 import { RequestInsert, requests } from "../../database/schema/carpoolRequests";
 import { users } from "../../database/schema/users";
 import { children } from "../../database/schema/children";
-import { eq, and, gte, lt, inArray, ne } from "drizzle-orm";
+import { eq, and, gte, lt, inArray, ne, isNull } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { type FirebaseUser } from "./userResolvers";
 import { childToRequest } from "../../database/schema/requestToChildren";
 import { CreateCarpoolInput, CreateRequestInput } from "../generated";
 import { groups } from "../../database/schema/groups";
 import { vehicle } from "../../database/schema/vehicle";
+import {
+  validateDate,
+  validateRequiredFields,
+  validateTime,
+} from "../../utils/date";
 
 const db = getDB();
 
@@ -165,7 +170,14 @@ export const carpoolResolvers = {
           createdAt: requests.createdAt,
         })
         .from(requests)
-        .where(and(eq(requests.isApproved, 0), eq(requests.groupId, groupId)));
+        .where(
+          and(
+            eq(requests.isApproved, 0),
+            eq(requests.groupId, groupId),
+            isNull(requests.carpoolId),
+            ne(requests.parentId, currentUser.uid)
+          )
+        );
 
       const requestIds = notApprovedRequests.map((request) => request.id);
 
@@ -396,13 +408,49 @@ export const carpoolResolvers = {
         driverChildIds,
       } = input;
 
+      console.log(input, "input");
+
       if (!currentUser || currentUser.uid !== driverId) {
         throw new ApolloError("Authentication required");
       }
 
-      if (!driverId || !vehicleId || !groupId || !startAddress || !endAddress) {
-        throw new ApolloError("Missing required fields");
+      // Validate required fields
+      validateRequiredFields(
+        {
+          driverId,
+          vehicleId,
+          groupId,
+          startAddress,
+          endAddress,
+          departureDate,
+          departureTime,
+        },
+        [
+          "driverId",
+          "vehicleId",
+          "groupId",
+          "startAddress",
+          "endAddress",
+          "departureDate",
+          "departureTime",
+        ]
+      );
+
+      // Validate date and time
+      if (!validateDate(departureDate)) {
+        throw new ApolloError("Invalid departureDate provided.");
       }
+
+      if (!validateTime(departureTime)) {
+        throw new ApolloError(
+          "Invalid departureTime provided. Use HH:mm format."
+        );
+      }
+
+      const [hours, minutes] = departureTime.split(":").map(Number);
+      const combinedDepartureDateTime = new Date(
+        new Date(departureDate).setHours(hours, minutes, 0, 0)
+      ).toISOString();
 
       const newCarpool = {
         id: uuid(),
@@ -415,8 +463,8 @@ export const carpoolResolvers = {
         startLon,
         endLat,
         endLon,
-        departureDate,
-        departureTime,
+        departureDate: departureDate,
+        departureTime: departureTime,
         extraCarSeat: extraCarSeat ? 1 : 0,
         winterTires: winterTires ? 1 : 0,
         tripPreferences,
@@ -451,13 +499,15 @@ export const carpoolResolvers = {
           startingLongitude: startLon.toString(),
           endingLatitude: endLat.toString(),
           endingLongitude: endLon.toString(),
-          pickupTime: departureTime,
+          pickupTime: combinedDepartureDateTime,
           childIds: driverChildIds.join(","),
           createdAt: new Date().toISOString(),
         };
 
         await db.insert(requests).values(driverRequest);
       }
+
+      console.log(newCarpool, "newCarpool");
 
       return newCarpool;
     },
@@ -484,7 +534,35 @@ export const carpoolResolvers = {
         pickupTime,
       } = input;
 
-      // Check for the existence of parentId in users
+      console.log(input, "input");
+
+      validateRequiredFields(
+        {
+          parentId,
+          childIds,
+          groupId,
+          startingAddress,
+          endingAddress,
+          startingLat,
+          startingLon,
+          endingLat,
+          endingLon,
+          pickupTime,
+        },
+        [
+          "parentId",
+          "childIds",
+          "groupId",
+          "startingAddress",
+          "endingAddress",
+          "startingLat",
+          "startingLon",
+          "endingLat",
+          "endingLon",
+          "pickupTime",
+        ]
+      );
+
       const userExists = await db
         .select()
         .from(users)
@@ -493,16 +571,15 @@ export const carpoolResolvers = {
         throw new ApolloError("Parent user does not exist in users table");
       }
 
-      // Check for the existence of groupId in groups
       const groupExists = await db
         .select()
         .from(groups)
         .where(eq(groups.id, groupId));
+
       if (groupExists.length === 0) {
         throw new ApolloError("Group does not exist in groups table");
       }
 
-      // Validate each childId in children
       const childrenExist = await db
         .select()
         .from(children)
@@ -513,7 +590,6 @@ export const carpoolResolvers = {
         );
       }
 
-      // Create the new request object
       const newRequest = {
         id: uuid(),
         parentId: currentUser.uid,
@@ -524,18 +600,16 @@ export const carpoolResolvers = {
         startingLongitude: startingLon.toString(),
         endingLatitude: endingLat.toString(),
         endingLongitude: endingLon.toString(),
-        pickupTime,
+        pickupTime: pickupTime,
         isApproved: 0,
         createdAt: new Date().toISOString(),
       };
 
-      // Insert the request into the database
       const result = await db.insert(requests).values(newRequest);
       if (!result) {
         throw new ApolloError("Failed to create request");
       }
 
-      // Insert each child-to-request relationship
       await Promise.all(
         childIds.map(async (childId: string) => {
           await db.insert(childToRequest).values({
@@ -546,18 +620,17 @@ export const carpoolResolvers = {
         })
       );
 
-      // Retrieve associated children for the response
       const associatedChildren = await db
         .select()
         .from(children)
         .where(inArray(children.id, childIds));
 
-      // Return the new request with associated children
       return {
         ...newRequest,
         children: associatedChildren,
       };
     },
+
     approveRequest: async (
       _: any,
       { requestId }: { requestId: string },
@@ -590,3 +663,8 @@ export const carpoolResolvers = {
     },
   },
 };
+
+function isValidTime(pickupTime: string): boolean {
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+  return timeRegex.test(pickupTime);
+}

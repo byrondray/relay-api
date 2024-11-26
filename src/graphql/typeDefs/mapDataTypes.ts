@@ -89,10 +89,6 @@ const mapDataTypeDefs = gql`
     timestamp: String!
     senderId: String!
   }
-
-  type Subscription {
-    locationReceived(recipientId: String!): LocationData
-  }
 `;
 
 export { mapDataTypeDefs };

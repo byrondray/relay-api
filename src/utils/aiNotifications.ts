@@ -10,7 +10,7 @@ interface CarpoolNotificationParams {
   destination: string;
   parentName: string;
   parentExpoToken: string;
-  childrenNames: string[]; // Include an array of children names
+  childrenNames: string[];
 }
 
 export const sendCarpoolNotification = async ({
@@ -27,8 +27,8 @@ export const sendCarpoolNotification = async ({
   const childList = childrenNames.join(", ");
   const prompt = `
   Write a short and friendly notification for a parent named ${parentName}.
-  The carpool is driven by ${driverName}. The next stop is ${nextStop} at ${nextStopTime}.
-  The children (${childList}) are in the carpool. The car is currently at ${currentLocation}, heading towards ${destination}.
+  The carpool is driven by ${driverName}. The driver is currently near ${nextStop}.
+  The children (${childList}) are in the carpool, heading towards ${destination}.
   Limit the response to two sentences.
 `;
 
@@ -48,7 +48,6 @@ export const sendCarpoolNotification = async ({
 
     console.log("Carpool notification sent successfully!");
     return messageContent;
-
   } catch (error) {
     console.error("Error sending carpool notification:", error);
   }

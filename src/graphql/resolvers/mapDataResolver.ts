@@ -17,6 +17,7 @@ import {
 import { children } from "../../database/schema/children";
 import { childToRequest } from "../../database/schema/requestToChildren";
 import { calculateDistance } from "../../utils/findDistance";
+import { getNearbyPlace } from "../../utils/getNearbyPlace";
 
 const notifiedEvents = new Set<string>();
 const notificationTracker = new Set<string>();
@@ -259,12 +260,7 @@ export const mapDataResolver = {
 
           const notificationKey = `NEAR_STOP_${nextStop.requestId}`;
           if (!notificationTracker.has(notificationKey) && lat && lon) {
-            const stopCoordinates = {
-              latitude: lat,
-              longitude: lon,
-            };
-
-            const driverCoordinates = { latitude: lat, longitude: lon };
+            const nearbyPlace = await getNearbyPlace(lat, lon);
 
             notificationTracker.add(notificationKey);
 
@@ -276,7 +272,7 @@ export const mapDataResolver = {
               const notificationParams = {
                 senderId: currentUser.uid,
                 driverName,
-                nextStop: nextStop.address,
+                nextStop: nearbyPlace || nextStop.address,
                 nextStopTime: timeToNextStop || "",
                 currentLocation: `${lat}, ${lon}`,
                 destination: carpool[0].destination,
@@ -303,6 +299,7 @@ export const mapDataResolver = {
           }
           break;
         }
+
         case "FINAL_DESTINATION": {
           const notificationKey = `FINAL_${carpoolId}`;
           if (!notificationTracker.has(notificationKey)) {

@@ -280,9 +280,7 @@ export const mapDataResolver = {
               if (!request || request.length === 0) {
                 throw new ApolloError("Request not found");
               }
-              if (request[0].parentId !== participant.parentId) {
-                continue;
-              }
+             
               const notificationParams = {
                 senderId: currentUser.uid,
                 driverName,

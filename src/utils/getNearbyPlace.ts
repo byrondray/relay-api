@@ -12,6 +12,7 @@ export const getNearbyPlace = async (
       params: {
         location: `${lat},${lon}`,
         radius: 500,
+        type: "restaurant",
         key: apiKey,
       },
     });
@@ -19,7 +20,13 @@ export const getNearbyPlace = async (
     const places = response.data.results;
 
     if (places && places.length > 0) {
-      return places[0].name;
+      const place = places[0];
+      const placeName = place.name;
+      const vicinity = place.vicinity;
+
+      const street = vicinity.split(",")[0];
+
+      return `${placeName} on ${street}`;
     }
 
     console.log("No nearby places found.");

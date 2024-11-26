@@ -509,9 +509,10 @@ const seedUsers = async () => {
     "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
   ]);
 
-  await createCarpoolWithRequests(evan.id, [gloria.id, kyanna.id]);
+  await createCarpoolWithRequests(evan.id, [gloria.id, kyanna.id, vanessa.id]);
   await createCarpoolWithRequests(gloria.id, [evan.id, kyanna.id]);
   await createCarpoolWithRequests(kyanna.id, [evan.id, gloria.id]);
+  await createCarpoolWithRequests(vanessa.id, [evan.id, gloria.id, kyanna.id]);
 };
 
 // @ts-ignore

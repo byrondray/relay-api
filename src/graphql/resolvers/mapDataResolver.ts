@@ -265,49 +265,39 @@ export const mapDataResolver = {
             };
 
             const driverCoordinates = { latitude: lat, longitude: lon };
-            const distanceToStop = calculateDistance(
-              driverCoordinates.latitude,
-              driverCoordinates.longitude,
-              stopCoordinates.latitude,
-              stopCoordinates.longitude
-            );
 
-            if (distanceToStop <= 50) {
-              notificationTracker.add(notificationKey);
+            notificationTracker.add(notificationKey);
 
-              for (const participant of carpoolParticipants) {
-                if (participant.parentId === currentUser.uid) {
-                  continue;
-                }
-                const notificationParams = {
-                  senderId: currentUser.uid,
-                  driverName,
-                  nextStop: nextStop.address,
-                  nextStopTime: timeToNextStop || "",
-                  currentLocation: `${lat}, ${lon}`,
-                  destination: carpool[0].destination,
-                  parentName: participant.parentName,
-                  parentExpoToken: participant.parentExpoToken || "",
-                  childrenNames: (participant.childNames as string).split(", "),
-                };
-
-                const message = await sendCarpoolNotification(
-                  notificationParams
-                );
-
-                console.log("Message:", message);
-
-                pubsub.publish(
-                  `FOREGROUND_NOTIFICATION_${participant.parentId}`,
-                  {
-                    foregroundNotification: {
-                      message: message,
-                      timestamp: new Date().toISOString(),
-                      senderId: currentUser.uid,
-                    },
-                  }
-                );
+            for (const participant of carpoolParticipants) {
+              if (participant.parentId === currentUser.uid) {
+                continue;
               }
+              const notificationParams = {
+                senderId: currentUser.uid,
+                driverName,
+                nextStop: nextStop.address,
+                nextStopTime: timeToNextStop || "",
+                currentLocation: `${lat}, ${lon}`,
+                destination: carpool[0].destination,
+                parentName: participant.parentName,
+                parentExpoToken: participant.parentExpoToken || "",
+                childrenNames: (participant.childNames as string).split(", "),
+              };
+
+              const message = await sendCarpoolNotification(notificationParams);
+
+              console.log("Message:", message);
+
+              pubsub.publish(
+                `FOREGROUND_NOTIFICATION_${participant.parentId}`,
+                {
+                  foregroundNotification: {
+                    message: message,
+                    timestamp: new Date().toISOString(),
+                    senderId: currentUser.uid,
+                  },
+                }
+              );
             }
           }
           break;

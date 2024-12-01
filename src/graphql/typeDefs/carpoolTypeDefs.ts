@@ -190,9 +190,23 @@ export const carpoolTypeDefs = gql`
     startLon: Float!
   }
 
+  type RequestWithParentAndChildAndCarpool {
+    id: String!
+    carpoolId: String
+    parent: User!
+    child: Child!
+    pickupTime: String!
+    startAddress: String!
+    startLat: Float!
+    startLon: Float!
+    carpool: Carpool
+    driver: User
+    vehicle: Vehicle
+  }
+
   type UserCarpoolsAndRequests {
     carpools: [CarpoolWithDriverAndVehicle!]!
-    requests: [RequestWithParentAndChild!]!
+    requests: [RequestWithParentAndChildAndCarpool!]!
   }
 
   type Query {

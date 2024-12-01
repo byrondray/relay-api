@@ -266,6 +266,8 @@ export type GroupMessage = {
 
 export type LocationData = {
   __typename?: 'LocationData';
+  carpoolId: Scalars['String']['output'];
+  driverId: Scalars['String']['output'];
   lat: Scalars['Float']['output'];
   lon: Scalars['Float']['output'];
   nextStop?: Maybe<NextStop>;
@@ -298,8 +300,9 @@ export type Mutation = {
   deleteFriend: FriendResponse;
   deleteMemberFromGroup: DeleteMemberFromGroupResponse;
   login: AuthPayload;
+  resetNotificationTracking: Scalars['Boolean']['output'];
   sendLocation?: Maybe<LocationData>;
-  sendNotificationInfo?: Maybe<LocationData>;
+  sendNotificationInfo?: Maybe<Scalars['Boolean']['output']>;
   updateExpoPushToken: User;
   updateUserInfo: User;
 };
@@ -634,6 +637,21 @@ export type RequestWithParentAndChild = {
   startLon: Scalars['Float']['output'];
 };
 
+export type RequestWithParentAndChildAndCarpool = {
+  __typename?: 'RequestWithParentAndChildAndCarpool';
+  carpool?: Maybe<Carpool>;
+  carpoolId?: Maybe<Scalars['String']['output']>;
+  child: Child;
+  driver?: Maybe<User>;
+  id: Scalars['String']['output'];
+  parent: User;
+  pickupTime: Scalars['String']['output'];
+  startAddress: Scalars['String']['output'];
+  startLat: Scalars['Float']['output'];
+  startLon: Scalars['Float']['output'];
+  vehicle?: Maybe<Vehicle>;
+};
+
 export type School = {
   __typename?: 'School';
   address: Scalars['String']['output'];
@@ -689,7 +707,7 @@ export type User = {
 export type UserCarpoolsAndRequests = {
   __typename?: 'UserCarpoolsAndRequests';
   carpools: Array<CarpoolWithDriverAndVehicle>;
-  requests: Array<RequestWithParentAndChild>;
+  requests: Array<RequestWithParentAndChildAndCarpool>;
 };
 
 export type Vehicle = {

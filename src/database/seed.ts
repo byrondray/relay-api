@@ -464,19 +464,19 @@ const seedUsers = async () => {
   );
 
   await ensureUserCompleteness(
-    evan.id,
-    evan.name,
-    evan.email,
-    evan.imageUrl,
-    evan.childImageUrl
-  );
-
-  await ensureUserCompleteness(
     gloria.id,
     gloria.name,
     gloria.email,
     gloria.imageUrl,
     gloria.childImageUrl
+  );
+
+  await ensureUserCompleteness(
+    kyanna.id,
+    kyanna.name,
+    kyanna.email,
+    kyanna.imageUrl,
+    kyanna.childImageUrl
   );
 
   await ensureUserCompleteness(
@@ -488,11 +488,11 @@ const seedUsers = async () => {
   );
 
   await ensureUserCompleteness(
-    kyanna.id,
-    kyanna.name,
-    kyanna.email,
-    kyanna.imageUrl,
-    kyanna.childImageUrl
+    evan.id,
+    evan.name,
+    evan.email,
+    evan.imageUrl,
+    evan.childImageUrl
   );
 
   await createEdmondsRequestForUser(evan.id);
@@ -508,10 +508,10 @@ const seedUsers = async () => {
     "hkdSMSsaZIg4tJE8q4fC8ejp1hO2",
   ]);
 
-  await createCarpoolWithRequests(evan.id, [gloria.id, kyanna.id, vanessa.id]);
-  await createCarpoolWithRequests(gloria.id, [evan.id, kyanna.id]);
-  await createCarpoolWithRequests(kyanna.id, [evan.id, gloria.id]);
-  await createCarpoolWithRequests(vanessa.id, [evan.id, gloria.id, kyanna.id]);
+  // await createCarpoolWithRequests(evan.id, [gloria.id, kyanna.id, vanessa.id]);
+  // await createCarpoolWithRequests(gloria.id, [evan.id, kyanna.id]);
+  // await createCarpoolWithRequests(kyanna.id, [evan.id, gloria.id]);
+  await createCarpoolWithRequests(vanessa.id, [evan.id, gloria.id]);
 };
 
 // @ts-ignore

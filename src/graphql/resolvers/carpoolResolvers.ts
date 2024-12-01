@@ -16,6 +16,7 @@ import {
   validateRequiredFields,
   validateTime,
 } from "../../utils/date";
+import { alias } from "drizzle-orm/sqlite-core";
 
 const db = getDB();
 
@@ -336,6 +337,8 @@ export const carpoolResolvers = {
         .where(eq(carpools.driverId, userId));
 
       // Fetch requests with parent and child details
+      const drivers = alias(users, "drivers");
+
       const requestsWithDetails = await db
         .select({
           id: requests.id,
@@ -350,12 +353,20 @@ export const carpoolResolvers = {
           childFirstName: children.firstName,
           childImageUrl: children.imageUrl,
           childSchoolId: children.schoolId,
+          carpool: carpools,
+          driver: drivers,
+          vehicle: vehicle,
         })
         .from(requests)
-        .innerJoin(users, eq(requests.parentId, users.id))
+        .leftJoin(carpools, eq(carpools.id, requests.carpoolId))
+        .leftJoin(vehicle, eq(vehicle.id, carpools.vehicleId)) // Vehicle should be a leftJoin
+        .innerJoin(users, eq(requests.parentId, users.id)) // Parent join
+        .leftJoin(drivers, eq(carpools.driverId, drivers.id)) // Join on carpool.driverId with alias
         .innerJoin(childToRequest, eq(childToRequest.requestId, requests.id))
         .innerJoin(children, eq(childToRequest.childId, children.id))
         .where(eq(requests.parentId, userId));
+
+      console.log(requestsWithDetails, "requestsWithDetails");
 
       return {
         carpools: carpoolsByDriver.map((carpool) => ({
@@ -378,6 +389,9 @@ export const carpoolResolvers = {
             schoolId: request.childSchoolId,
             imageUrl: request.childImageUrl,
           },
+          carpool: request.carpool,
+          vehicle: request.vehicle,
+          driver: request.driver,
         })),
       };
     },

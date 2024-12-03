@@ -24,6 +24,7 @@ const evan = {
   email: "evan@gmail.com",
   imageUrl: "https://i.postimg.cc/WznZjdLj/evan-profile.png",
   childImageUrl: "https://i.postimg.cc/FKd0cFcg/evan-child.jpg",
+  childName: "Anthony",
 };
 
 const vanessa = {
@@ -55,7 +56,8 @@ export const ensureUserCompleteness = async (
   name?: string,
   email?: string,
   imageUrl?: string,
-  childImageUrl?: string
+  childImageUrl?: string,
+  childName?: string
 ) => {
   const db = getDB();
 
@@ -178,7 +180,7 @@ export const ensureUserCompleteness = async (
     await db.insert(children).values({
       id: childId,
       userId: userId,
-      firstName: faker.person.firstName(),
+      firstName: childName ? childName : faker.person.firstName(),
       schoolId: edmondsSchool.id,
       schoolEmailAddress: faker.internet.email(),
       imageUrl: childImageUrl || "",
@@ -492,7 +494,8 @@ const seedUsers = async () => {
     evan.name,
     evan.email,
     evan.imageUrl,
-    evan.childImageUrl
+    evan.childImageUrl,
+    evan.childName
   );
 
   await createEdmondsRequestForUser(evan.id);

@@ -27,7 +27,7 @@ export const sendCarpoolNotification = async ({
   const childList = childrenNames.join(", ");
   const prompt = `
   Write a short and friendly notification for a parent named ${parentName}.
-  The carpool is driven by ${driverName}. The driver is currently near ${nextStop} and will arrive there at approximately ${nextStopTime}.
+  The carpool is driven by ${driverName}. The driver is currently near ${nextStop} and will arrive at the next stop in approximately ${nextStopTime}.
   The children (${childList}) are in the carpool, heading towards ${destination}.
   Limit the response to two sentences.
 `;
